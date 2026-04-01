@@ -1,19 +1,6 @@
-// Stub: TungstenTool is an ANT-only tool (tmux-based virtual terminal).
-// Only loaded when process.env.USER_TYPE === 'ant', which is never true here.
-import { buildTool } from "../../Tool.js";
-import { z } from "zod";
+// Auto-generated stub — replace with real implementation
+import type { Tool } from '../../Tool.js'
 
-export const TungstenTool = buildTool({
-	name: "Tungsten",
-	description: async () => "ANT-only tool (stub)",
-	inputSchema: z.object({}),
-	isEnabled: () => false,
-	async call() {
-		return { type: "text", text: "TungstenTool is not available in this build." };
-	},
-	isConcurrencySafe: () => false,
-	isReadOnly: () => false,
-});
-
-export function clearSessionsWithTungstenUsage(): void {}
-export function resetInitializationState(): void {}
+export const TungstenTool: Tool = (() => {}) as unknown as Tool;
+export const clearSessionsWithTungstenUsage: () => void = (() => {});
+export const resetInitializationState: () => void = (() => {});

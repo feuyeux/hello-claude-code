@@ -1,5 +1,11 @@
 # 性能、缓存与上下文治理专题
 
+## 0. 阅读提示
+
+- 这篇不是单独的新功能说明，而是把前面各篇里分散的“工程性设计”重新串起来。
+- 建议至少先看过 [02-startup-flow.md](./02-startup-flow.md)、[05-query-and-request.md](./05-query-and-request.md) 和 [06-tools-and-permissions.md](./06-tools-and-permissions.md) 再读。
+- 阅读时不要只盯“性能”二字，这篇同样在解释缓存稳定性、资源回收、上下文恢复和长期会话可持续性。
+
 ## 1. 这篇为什么重要
 
 如果只读功能代码，很容易忽略一个事实：

@@ -1,5 +1,11 @@
 # `query()` 主循环与请求构造
 
+## 0. 阅读提示
+
+- 这篇是整组文档里最接近“执行内核”的一篇，核心是把 `query()` 当成多轮状态机来读。
+- 建议先看 [04-input-command-queue.md](./04-input-command-queue.md)，再继续看 [06-tools-and-permissions.md](./06-tools-and-permissions.md) 和 [09-performance-cache-context.md](./09-performance-cache-context.md)。
+- 阅读时先抓住一个事实：一次用户 turn 可能包含多轮模型请求与多轮工具回流，而不是一次 request/response。
+
 ## 1. 先给一句定义
 
 `src/query.ts` 里的 `query()` 不是“调用一次模型 API”的薄包装，而是整个系统的对话执行状态机。
@@ -17,7 +23,7 @@
 
 ```mermaid
 flowchart TB
-    A[query(params)] --> B[queryLoop]
+    A["query(params)"] --> B[queryLoop]
     B --> C[截取 compact boundary 后消息]
     C --> D[tool result budget]
     D --> E[snip]

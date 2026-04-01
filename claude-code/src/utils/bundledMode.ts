@@ -5,8 +5,8 @@
  * - Running a Bun-compiled standalone executable
  */
 export function isRunningWithBun(): boolean {
-	// https://bun.com/guides/util/detect-bun
-	return process.versions.bun !== undefined;
+  // https://bun.com/guides/util/detect-bun
+  return process.versions.bun !== undefined
 }
 
 /**
@@ -14,5 +14,9 @@ export function isRunningWithBun(): boolean {
  * This checks for embedded files which are present in compiled binaries.
  */
 export function isInBundledMode(): boolean {
-	return typeof Bun !== "undefined" && Array.isArray(Bun.embeddedFiles) && Bun.embeddedFiles.length > 0;
+  return (
+    typeof Bun !== 'undefined' &&
+    Array.isArray(Bun.embeddedFiles) &&
+    Bun.embeddedFiles.length > 0
+  )
 }

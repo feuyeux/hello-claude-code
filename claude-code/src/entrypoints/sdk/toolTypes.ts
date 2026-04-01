@@ -1,2 +1,9 @@
-// Stub: SDK tool types (@internal until SDK API stabilizes).
-export type {};
+/**
+ * Stub: SDK Tool Types.
+ */
+export type SdkToolDefinition = {
+  name: string
+  description: string
+  inputSchema: Record<string, unknown>
+  [key: string]: unknown
+}

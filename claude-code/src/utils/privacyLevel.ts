@@ -15,16 +15,16 @@
  *   DISABLE_TELEMETRY                         →  no-telemetry
  */
 
-type PrivacyLevel = "default" | "no-telemetry" | "essential-traffic";
+type PrivacyLevel = 'default' | 'no-telemetry' | 'essential-traffic'
 
 export function getPrivacyLevel(): PrivacyLevel {
-	if (process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC) {
-		return "essential-traffic";
-	}
-	if (process.env.DISABLE_TELEMETRY) {
-		return "no-telemetry";
-	}
-	return "default";
+  if (process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC) {
+    return 'essential-traffic'
+  }
+  if (process.env.DISABLE_TELEMETRY) {
+    return 'no-telemetry'
+  }
+  return 'default'
 }
 
 /**
@@ -32,7 +32,7 @@ export function getPrivacyLevel(): PrivacyLevel {
  * Equivalent to the old `process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` check.
  */
 export function isEssentialTrafficOnly(): boolean {
-	return getPrivacyLevel() === "essential-traffic";
+  return getPrivacyLevel() === 'essential-traffic'
 }
 
 /**
@@ -40,7 +40,7 @@ export function isEssentialTrafficOnly(): boolean {
  * True at both `no-telemetry` and `essential-traffic` levels.
  */
 export function isTelemetryDisabled(): boolean {
-	return getPrivacyLevel() !== "default";
+  return getPrivacyLevel() !== 'default'
 }
 
 /**
@@ -48,8 +48,8 @@ export function isTelemetryDisabled(): boolean {
  * or null if unrestricted. Used for user-facing "unset X to re-enable" messages.
  */
 export function getEssentialTrafficOnlyReason(): string | null {
-	if (process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC) {
-		return "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC";
-	}
-	return null;
+  if (process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC) {
+    return 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'
+  }
+  return null
 }

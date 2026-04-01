@@ -1,16 +1,16 @@
-import { createMovedToPluginCommand } from "../createMovedToPluginCommand.js";
+import { createMovedToPluginCommand } from '../createMovedToPluginCommand.js'
 
 export default createMovedToPluginCommand({
-	name: "pr-comments",
-	description: "Get comments from a GitHub pull request",
-	progressMessage: "fetching PR comments",
-	pluginName: "pr-comments",
-	pluginCommand: "pr-comments",
-	async getPromptWhileMarketplaceIsPrivate(args) {
-		return [
-			{
-				type: "text",
-				text: `You are an AI assistant integrated into a git-based version control system. Your task is to fetch and display comments from a GitHub pull request.
+  name: 'pr-comments',
+  description: 'Get comments from a GitHub pull request',
+  progressMessage: 'fetching PR comments',
+  pluginName: 'pr-comments',
+  pluginCommand: 'pr-comments',
+  async getPromptWhileMarketplaceIsPrivate(args) {
+    return [
+      {
+        type: 'text',
+        text: `You are an AI assistant integrated into a git-based version control system. Your task is to fetch and display comments from a GitHub pull request.
 
 Follow these steps:
 
@@ -42,9 +42,9 @@ Remember:
 4. Show the file and line number context for code review comments
 5. Use jq to parse the JSON responses from the GitHub API
 
-${args ? "Additional user input: " + args : ""}
+${args ? 'Additional user input: ' + args : ''}
 `,
-			},
-		];
-	},
-});
+      },
+    ]
+  },
+})

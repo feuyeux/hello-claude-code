@@ -1,6 +1,6 @@
-import { createHash, randomUUID } from "crypto";
-import { tmpdir } from "os";
-import { join } from "path";
+import { createHash, randomUUID } from 'crypto'
+import { tmpdir } from 'os'
+import { join } from 'path'
 
 /**
  * Generate a temporary file path.
@@ -17,12 +17,15 @@ import { join } from "path";
  * @returns Temp file path
  */
 export function generateTempFilePath(
-	prefix: string = "claude-prompt",
-	extension: string = ".md",
-	options?: { contentHash?: string },
+  prefix: string = 'claude-prompt',
+  extension: string = '.md',
+  options?: { contentHash?: string },
 ): string {
-	const id = options?.contentHash
-		? createHash("sha256").update(options.contentHash).digest("hex").slice(0, 16)
-		: randomUUID();
-	return join(tmpdir(), `${prefix}-${id}${extension}`);
+  const id = options?.contentHash
+    ? createHash('sha256')
+        .update(options.contentHash)
+        .digest('hex')
+        .slice(0, 16)
+    : randomUUID()
+  return join(tmpdir(), `${prefix}-${id}${extension}`)
 }

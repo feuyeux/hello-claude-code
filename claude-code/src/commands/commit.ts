@@ -1,19 +1,23 @@
-import type { Command } from "../commands.js";
-import { getAttributionTexts } from "../utils/attribution.js";
-import { executeShellCommandsInPrompt } from "../utils/promptShellExecution.js";
-import { getUndercoverInstructions, isUndercover } from "../utils/undercover.js";
+import type { Command } from '../commands.js'
+import { getAttributionTexts } from '../utils/attribution.js'
+import { executeShellCommandsInPrompt } from '../utils/promptShellExecution.js'
+import { getUndercoverInstructions, isUndercover } from '../utils/undercover.js'
 
-const ALLOWED_TOOLS = ["Bash(git add:*)", "Bash(git status:*)", "Bash(git commit:*)"];
+const ALLOWED_TOOLS = [
+  'Bash(git add:*)',
+  'Bash(git status:*)',
+  'Bash(git commit:*)',
+]
 
 function getPromptContent(): string {
-	const { commit: commitAttribution } = getAttributionTexts();
+  const { commit: commitAttribution } = getAttributionTexts()
 
-	let prefix = "";
-	if (process.env.USER_TYPE === "ant" && isUndercover()) {
-		prefix = getUndercoverInstructions() + "\n";
-	}
+  let prefix = ''
+  if (process.env.USER_TYPE === 'ant' && isUndercover()) {
+    prefix = getUndercoverInstructions() + '\n'
+  }
 
-	return `${prefix}## Context
+  return `${prefix}## Context
 
 - Current git status: !\`git status\`
 - Current git diff (staged and unstaged changes): !\`git diff HEAD\`
@@ -42,47 +46,47 @@ Based on the above changes, create a single git commit:
 2. Stage relevant files and create the commit using HEREDOC syntax:
 \`\`\`
 git commit -m "$(cat <<'EOF'
-Commit message here.${commitAttribution ? `\n\n${commitAttribution}` : ""}
+Commit message here.${commitAttribution ? `\n\n${commitAttribution}` : ''}
 EOF
 )"
 \`\`\`
 
-You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.`;
+You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.`
 }
 
 const command = {
-	type: "prompt",
-	name: "commit",
-	description: "Create a git commit",
-	allowedTools: ALLOWED_TOOLS,
-	contentLength: 0, // Dynamic content
-	progressMessage: "creating commit",
-	source: "builtin",
-	async getPromptForCommand(_args, context) {
-		const promptContent = getPromptContent();
-		const finalContent = await executeShellCommandsInPrompt(
-			promptContent,
-			{
-				...context,
-				getAppState() {
-					const appState = context.getAppState();
-					return {
-						...appState,
-						toolPermissionContext: {
-							...appState.toolPermissionContext,
-							alwaysAllowRules: {
-								...appState.toolPermissionContext.alwaysAllowRules,
-								command: ALLOWED_TOOLS,
-							},
-						},
-					};
-				},
-			},
-			"/commit",
-		);
+  type: 'prompt',
+  name: 'commit',
+  description: 'Create a git commit',
+  allowedTools: ALLOWED_TOOLS,
+  contentLength: 0, // Dynamic content
+  progressMessage: 'creating commit',
+  source: 'builtin',
+  async getPromptForCommand(_args, context) {
+    const promptContent = getPromptContent()
+    const finalContent = await executeShellCommandsInPrompt(
+      promptContent,
+      {
+        ...context,
+        getAppState() {
+          const appState = context.getAppState()
+          return {
+            ...appState,
+            toolPermissionContext: {
+              ...appState.toolPermissionContext,
+              alwaysAllowRules: {
+                ...appState.toolPermissionContext.alwaysAllowRules,
+                command: ALLOWED_TOOLS,
+              },
+            },
+          }
+        },
+      },
+      '/commit',
+    )
 
-		return [{ type: "text", text: finalContent }];
-	},
-} satisfies Command;
+    return [{ type: 'text', text: finalContent }]
+  },
+} satisfies Command
 
-export default command;
+export default command

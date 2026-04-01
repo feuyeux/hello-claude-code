@@ -1,16 +1,12 @@
 # 启动流程详解
 
-## 1. 为什么启动流程值得单独讲
+## 0. 阅读提示
 
-这个项目的启动阶段远不只是“parse argv 然后 render REPL”。源码里把启动拆成了多个阶段，每个阶段都带着明确目的：
+- 这篇回答的问题是：Claude Code CLI 从进程启动到 REPL 可交互，中间到底经过了哪些阶段。
+- 最适合在读完 [01-architecture.md](./01-architecture.md) 后阅读；如果你更关心交互态，再继续看 [03-repl-and-state.md](./03-repl-and-state.md)。
+- 阅读时重点抓三条线：性能关键路径、trust 安全边界、交互模式与非交互模式的分流。
 
-- 缩短首屏时间。
-- 避免在用户确认 trust 之前读取危险上下文。
-- 把一些异步预取藏在用户尚未输入的时间窗口里。
-- 在交互模式与非交互模式之间做严格分流。
-- 让会话、插件、技能、MCP、worktree、tmux、telemetry 都在合适的时机上线。
-
-## 2. 总体时序图
+## 1. 总体时序图
 
 ```mermaid
 sequenceDiagram
@@ -34,6 +30,16 @@ sequenceDiagram
     end
 ```
 
+## 2. 先带着什么问题读
+
+读这篇时，建议始终带着下面三个问题：
+
+1. 哪些事情必须在首屏之前完成，哪些可以延后。
+2. 哪些阶段是为了安全边界，哪些阶段是为了体验和性能。
+3. 为什么同样是“启动”，交互模式和非交互模式的路径差这么多。
+
+如果这三个问题能答清楚，后面再看 `setup.ts`、`interactiveHelpers.tsx`、`replLauncher.tsx` 就不会迷路。
+
 ## 3. 阶段 0：比普通 import 更早的预取
 
 关键代码：`src/main.tsx:1-20`
@@ -56,7 +62,30 @@ sequenceDiagram
 - 某些平台相关读取是阻塞型的。
 - 如果等到后面需要用时再同步读取，会拖慢首屏或 trust 后处理。
 
-### 3.1 这类写法体现了什么
+### 3.1 MDM 是什么
+
+这里的 `MDM` 指的是 `Mobile Device Management`，也就是企业设备管理/托管配置。
+
+在这个项目里，它不是“普通用户设置”，而是“操作系统层面的企业托管策略来源”，用于让公司 IT 或管理员统一下发 Claude Code 的受管配置。
+
+- macOS 读取 `com.anthropic.claudecode` 的 managed preferences，来源是 `/Library/Managed Preferences/` 下的 MDM profile。
+- Windows 读取注册表策略项：`HKLM\\SOFTWARE\\Policies\\ClaudeCode`，以及更低优先级的 `HKCU\\SOFTWARE\\Policies\\ClaudeCode`。
+- Linux 没有对应的 OS 级 MDM 机制，这里退化为读取 `/etc/claude-code/managed-settings.json`。
+
+这个系统的重点是“受管设置优先于普通本地配置”。源码里的优先级大致是：
+
+- remote managed settings
+- HKLM / macOS plist
+- `managed-settings.json`
+- HKCU
+
+所以 `startMdmRawRead()` 的含义不是“提前读一个无关元数据”，而是：
+
+1. 尽早启动企业策略读取。
+2. 让 `plutil` / `reg query` 这些子进程和后面的重型 import 并行。
+3. 避免第一次真正读取 settings 时再同步阻塞。
+
+### 3.2 这类写法体现了什么
 
 体现了两个工程判断：
 

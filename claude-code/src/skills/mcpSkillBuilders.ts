@@ -1,4 +1,7 @@
-import type { createSkillCommand, parseSkillFrontmatterFields } from "./loadSkillsDir.js";
+import type {
+  createSkillCommand,
+  parseSkillFrontmatterFields,
+} from './loadSkillsDir.js'
 
 /**
  * Write-once registry for the two loadSkillsDir functions that MCP skill
@@ -21,19 +24,21 @@ import type { createSkillCommand, parseSkillFrontmatterFields } from "./loadSkil
  */
 
 export type MCPSkillBuilders = {
-	createSkillCommand: typeof createSkillCommand;
-	parseSkillFrontmatterFields: typeof parseSkillFrontmatterFields;
-};
+  createSkillCommand: typeof createSkillCommand
+  parseSkillFrontmatterFields: typeof parseSkillFrontmatterFields
+}
 
-let builders: MCPSkillBuilders | null = null;
+let builders: MCPSkillBuilders | null = null
 
 export function registerMCPSkillBuilders(b: MCPSkillBuilders): void {
-	builders = b;
+  builders = b
 }
 
 export function getMCPSkillBuilders(): MCPSkillBuilders {
-	if (!builders) {
-		throw new Error("MCP skill builders not registered — loadSkillsDir.ts has not been evaluated yet");
-	}
-	return builders;
+  if (!builders) {
+    throw new Error(
+      'MCP skill builders not registered — loadSkillsDir.ts has not been evaluated yet',
+    )
+  }
+  return builders
 }

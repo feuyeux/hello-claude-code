@@ -1,24 +1,27 @@
-import type { ContentBlock } from "@anthropic-ai/sdk/resources/index.mjs";
-import { getUserContext } from "src/context.js";
-import { queryModelWithoutStreaming } from "src/services/api/claude.js";
-import { getEmptyToolPermissionContext } from "src/Tool.js";
-import { AGENT_TOOL_NAME } from "src/tools/AgentTool/constants.js";
-import { prependUserContext } from "src/utils/api.js";
-import { createUserMessage, normalizeMessagesForAPI } from "src/utils/messages.js";
-import type { ModelName } from "src/utils/model/model.js";
-import { isAutoMemoryEnabled } from "../../memdir/paths.js";
+import type { ContentBlock } from '@anthropic-ai/sdk/resources/index.mjs'
+import { getUserContext } from 'src/context.js'
+import { queryModelWithoutStreaming } from 'src/services/api/claude.js'
+import { getEmptyToolPermissionContext } from 'src/Tool.js'
+import { AGENT_TOOL_NAME } from 'src/tools/AgentTool/constants.js'
+import { prependUserContext } from 'src/utils/api.js'
 import {
-	type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-	logEvent,
-} from "../../services/analytics/index.js";
-import { jsonParse } from "../../utils/slowOperations.js";
-import { asSystemPrompt } from "../../utils/systemPromptType.js";
+  createUserMessage,
+  normalizeMessagesForAPI,
+} from 'src/utils/messages.js'
+import type { ModelName } from 'src/utils/model/model.js'
+import { isAutoMemoryEnabled } from '../../memdir/paths.js'
+import {
+  type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  logEvent,
+} from '../../services/analytics/index.js'
+import { jsonParse } from '../../utils/slowOperations.js'
+import { asSystemPrompt } from '../../utils/systemPromptType.js'
 
 type GeneratedAgent = {
-	identifier: string;
-	whenToUse: string;
-	systemPrompt: string;
-};
+  identifier: string
+  whenToUse: string
+  systemPrompt: string
+}
 
 const AGENT_CREATION_SYSTEM_PROMPT = `You are an elite AI agent architect specializing in crafting high-performance agent configurations. Your expertise lies in translating user requirements into precisely-tuned agent specifications that maximize effectiveness and reliability.
 
@@ -91,7 +94,7 @@ Key principles for your system prompts:
 - Build in quality assurance and self-correction mechanisms
 
 Remember: The agents you create should be autonomous experts capable of handling their designated tasks with minimal additional guidance. Your system prompts are their complete operational manual.
-`;
+`
 
 // Agent memory instructions to include in the system prompt when memory is mentioned or relevant
 const AGENT_MEMORY_INSTRUCTIONS = `
@@ -114,80 +117,81 @@ const AGENT_MEMORY_INSTRUCTIONS = `
    - For a documentation writer: "Update your agent memory as you discover documentation patterns, API structures, and terminology conventions."
 
    The memory instructions should be specific to what the agent would naturally learn while performing its core tasks.
-`;
+`
 
 export async function generateAgent(
-	userPrompt: string,
-	model: ModelName,
-	existingIdentifiers: string[],
-	abortSignal: AbortSignal,
+  userPrompt: string,
+  model: ModelName,
+  existingIdentifiers: string[],
+  abortSignal: AbortSignal,
 ): Promise<GeneratedAgent> {
-	const existingList =
-		existingIdentifiers.length > 0
-			? `\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existingIdentifiers.join(", ")}`
-			: "";
+  const existingList =
+    existingIdentifiers.length > 0
+      ? `\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existingIdentifiers.join(', ')}`
+      : ''
 
-	const prompt = `Create an agent configuration based on this request: "${userPrompt}".${existingList}
-  Return ONLY the JSON object, no other text.`;
+  const prompt = `Create an agent configuration based on this request: "${userPrompt}".${existingList}
+  Return ONLY the JSON object, no other text.`
 
-	const userMessage = createUserMessage({ content: prompt });
+  const userMessage = createUserMessage({ content: prompt })
 
-	// Fetch user and system contexts
-	const userContext = await getUserContext();
+  // Fetch user and system contexts
+  const userContext = await getUserContext()
 
-	// Prepend user context to messages and append system context to system prompt
-	const messagesWithContext = prependUserContext([userMessage], userContext);
+  // Prepend user context to messages and append system context to system prompt
+  const messagesWithContext = prependUserContext([userMessage], userContext)
 
-	// Include memory instructions when the feature is enabled
-	const systemPrompt = isAutoMemoryEnabled()
-		? AGENT_CREATION_SYSTEM_PROMPT + AGENT_MEMORY_INSTRUCTIONS
-		: AGENT_CREATION_SYSTEM_PROMPT;
+  // Include memory instructions when the feature is enabled
+  const systemPrompt = isAutoMemoryEnabled()
+    ? AGENT_CREATION_SYSTEM_PROMPT + AGENT_MEMORY_INSTRUCTIONS
+    : AGENT_CREATION_SYSTEM_PROMPT
 
-	const response = await queryModelWithoutStreaming({
-		messages: normalizeMessagesForAPI(messagesWithContext),
-		systemPrompt: asSystemPrompt([systemPrompt]),
-		thinkingConfig: { type: "disabled" as const },
-		tools: [],
-		signal: abortSignal,
-		options: {
-			getToolPermissionContext: async () => getEmptyToolPermissionContext(),
-			model,
-			toolChoice: undefined,
-			agents: [],
-			isNonInteractiveSession: false,
-			hasAppendSystemPrompt: false,
-			querySource: "agent_creation",
-			mcpTools: [],
-		},
-	});
+  const response = await queryModelWithoutStreaming({
+    messages: normalizeMessagesForAPI(messagesWithContext),
+    systemPrompt: asSystemPrompt([systemPrompt]),
+    thinkingConfig: { type: 'disabled' as const },
+    tools: [],
+    signal: abortSignal,
+    options: {
+      getToolPermissionContext: async () => getEmptyToolPermissionContext(),
+      model,
+      toolChoice: undefined,
+      agents: [],
+      isNonInteractiveSession: false,
+      hasAppendSystemPrompt: false,
+      querySource: 'agent_creation',
+      mcpTools: [],
+    },
+  })
 
-	const textBlocks = response.message.content.filter(
-		(block): block is ContentBlock & { type: "text" } => block.type === "text",
-	);
-	const responseText = textBlocks.map((block) => block.text).join("\n");
+  const textBlocks = (Array.isArray(response.message.content) ? response.message.content : []).filter(
+    (block): block is ContentBlock & { type: 'text' } => block.type === 'text',
+  )
+  const responseText = textBlocks.map(block => block.text).join('\n')
 
-	let parsed: GeneratedAgent;
-	try {
-		parsed = jsonParse(responseText.trim());
-	} catch {
-		const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-		if (!jsonMatch) {
-			throw new Error("No JSON object found in response");
-		}
-		parsed = jsonParse(jsonMatch[0]);
-	}
+  let parsed: GeneratedAgent
+  try {
+    parsed = jsonParse(responseText.trim())
+  } catch {
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('No JSON object found in response')
+    }
+    parsed = jsonParse(jsonMatch[0])
+  }
 
-	if (!parsed.identifier || !parsed.whenToUse || !parsed.systemPrompt) {
-		throw new Error("Invalid agent configuration generated");
-	}
+  if (!parsed.identifier || !parsed.whenToUse || !parsed.systemPrompt) {
+    throw new Error('Invalid agent configuration generated')
+  }
 
-	logEvent("tengu_agent_definition_generated", {
-		agent_identifier: parsed.identifier as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-	});
+  logEvent('tengu_agent_definition_generated', {
+    agent_identifier:
+      parsed.identifier as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  })
 
-	return {
-		identifier: parsed.identifier,
-		whenToUse: parsed.whenToUse,
-		systemPrompt: parsed.systemPrompt,
-	};
+  return {
+    identifier: parsed.identifier,
+    whenToUse: parsed.whenToUse,
+    systemPrompt: parsed.systemPrompt,
+  }
 }

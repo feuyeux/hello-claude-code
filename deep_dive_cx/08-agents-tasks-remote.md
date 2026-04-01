@@ -1,5 +1,11 @@
 # 多代理、后台任务与远程会话
 
+## 0. 阅读提示
+
+- 这篇聚焦子代理、后台任务和远程会话，不建议孤立阅读。
+- 最好先看 [06-tools-and-permissions.md](./06-tools-and-permissions.md) 和 [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)，因为这里的大量机制都是沿着工具系统和扩展系统继续展开的。
+- 阅读时重点抓住一条主线：`AgentTool` 并不是特殊后门，而是以普通工具协议接入多代理能力。
+
 ## 1. Agent 在这套系统里的真实地位
 
 在源码中，子代理不是一个平行子系统，而是工具系统的一部分。
@@ -327,7 +333,7 @@ flowchart TB
 
     E --> G[registerAsyncAgent / foreground]
     E --> H[createSubagentContext]
-    E --> I[query()]
+    E --> I["query()"]
     I --> J[sidechain transcript]
 
     F --> K[registerRemoteAgentTask]

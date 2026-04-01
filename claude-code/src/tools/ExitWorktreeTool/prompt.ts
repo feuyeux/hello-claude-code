@@ -1,5 +1,5 @@
 export function getExitWorktreeToolPrompt(): string {
-	return `Exit a worktree session created by EnterWorktree and return the session to the original working directory.
+  return `Exit a worktree session created by EnterWorktree and return the session to the original working directory.
 
 ## Scope
 
@@ -28,5 +28,5 @@ If called outside an EnterWorktree session, the tool is a **no-op**: it reports 
 - Clears CWD-dependent caches (system prompt sections, memory files, plans directory) so the session state reflects the original directory
 - If a tmux session was attached to the worktree: killed on \`remove\`, left running on \`keep\` (its name is returned so the user can reattach)
 - Once exited, EnterWorktree can be called again to create a fresh worktree
-`;
+`
 }

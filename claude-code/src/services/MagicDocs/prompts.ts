@@ -1,12 +1,12 @@
-import { join } from "path";
-import { getClaudeConfigHomeDir } from "../../utils/envUtils.js";
-import { getFsImplementation } from "../../utils/fsOperations.js";
+import { join } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
+import { getFsImplementation } from '../../utils/fsOperations.js'
 
 /**
  * Get the Magic Docs update prompt template
  */
 function getUpdatePromptTemplate(): string {
-	return `IMPORTANT: This message and these instructions are NOT part of the actual user conversation. Do NOT include any references to "documentation updates", "magic docs", or these update instructions in the document content.
+  return `IMPORTANT: This message and these instructions are NOT part of the actual user conversation. Do NOT include any references to "documentation updates", "magic docs", or these update instructions in the document content.
 
 Based on the user conversation above (EXCLUDING this documentation update instruction message), update the Magic Doc file to incorporate any NEW learnings, insights, or information that would be valuable to preserve.
 
@@ -55,7 +55,7 @@ What NOT to document:
 
 Use the Edit tool with file_path: {{docPath}}
 
-REMEMBER: Only update if there is substantial new information. The Magic Doc header (# MAGIC DOC: {{docTitle}}) must remain unchanged.`;
+REMEMBER: Only update if there is substantial new information. The Magic Doc header (# MAGIC DOC: {{docTitle}}) must remain unchanged.`
 }
 
 /**
@@ -64,43 +64,48 @@ REMEMBER: Only update if there is substantial new information. The Magic Doc hea
  * Use {{variableName}} syntax for variable substitution (e.g., {{docContents}}, {{docPath}}, {{docTitle}})
  */
 async function loadMagicDocsPrompt(): Promise<string> {
-	const fs = getFsImplementation();
-	const promptPath = join(getClaudeConfigHomeDir(), "magic-docs", "prompt.md");
+  const fs = getFsImplementation()
+  const promptPath = join(getClaudeConfigHomeDir(), 'magic-docs', 'prompt.md')
 
-	try {
-		return await fs.readFile(promptPath, { encoding: "utf-8" });
-	} catch {
-		// Silently fall back to default if custom prompt doesn't exist or fails to load
-		return getUpdatePromptTemplate();
-	}
+  try {
+    return await fs.readFile(promptPath, { encoding: 'utf-8' })
+  } catch {
+    // Silently fall back to default if custom prompt doesn't exist or fails to load
+    return getUpdatePromptTemplate()
+  }
 }
 
 /**
  * Substitute variables in the prompt template using {{variable}} syntax
  */
-function substituteVariables(template: string, variables: Record<string, string>): string {
-	// Single-pass replacement avoids two bugs: (1) $ backreference corruption
-	// (replacer fn treats $ literally), and (2) double-substitution when user
-	// content happens to contain {{varName}} matching a later variable.
-	return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
-		Object.prototype.hasOwnProperty.call(variables, key) ? variables[key]! : match,
-	);
+function substituteVariables(
+  template: string,
+  variables: Record<string, string>,
+): string {
+  // Single-pass replacement avoids two bugs: (1) $ backreference corruption
+  // (replacer fn treats $ literally), and (2) double-substitution when user
+  // content happens to contain {{varName}} matching a later variable.
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
+    Object.prototype.hasOwnProperty.call(variables, key)
+      ? variables[key]!
+      : match,
+  )
 }
 
 /**
  * Build the Magic Docs update prompt with variable substitution
  */
 export async function buildMagicDocsUpdatePrompt(
-	docContents: string,
-	docPath: string,
-	docTitle: string,
-	instructions?: string,
+  docContents: string,
+  docPath: string,
+  docTitle: string,
+  instructions?: string,
 ): Promise<string> {
-	const promptTemplate = await loadMagicDocsPrompt();
+  const promptTemplate = await loadMagicDocsPrompt()
 
-	// Build custom instructions section if provided
-	const customInstructions = instructions
-		? `
+  // Build custom instructions section if provided
+  const customInstructions = instructions
+    ? `
 
 DOCUMENT-SPECIFIC UPDATE INSTRUCTIONS:
 The document author has provided specific instructions for how this file should be updated. Pay extra attention to these instructions and follow them carefully:
@@ -108,15 +113,15 @@ The document author has provided specific instructions for how this file should 
 "${instructions}"
 
 These instructions take priority over the general rules below. Make sure your updates align with these specific guidelines.`
-		: "";
+    : ''
 
-	// Substitute variables in the prompt
-	const variables = {
-		docContents,
-		docPath,
-		docTitle,
-		customInstructions,
-	};
+  // Substitute variables in the prompt
+  const variables = {
+    docContents,
+    docPath,
+    docTitle,
+    customInstructions,
+  }
 
-	return substituteVariables(promptTemplate, variables);
+  return substituteVariables(promptTemplate, variables)
 }

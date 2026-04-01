@@ -4,23 +4,23 @@
  * line format for detailed reports.
  */
 
-import type { performance as PerformanceType } from "perf_hooks";
-import { formatFileSize } from "./format.js";
+import type { performance as PerformanceType } from 'perf_hooks'
+import { formatFileSize } from './format.js'
 
 // Lazy-load performance API only when profiling is enabled.
 // Shared across all profilers — perf_hooks.performance is a process-wide singleton.
-let performance: typeof PerformanceType | null = null;
+let performance: typeof PerformanceType | null = null
 
 export function getPerformance(): typeof PerformanceType {
-	if (!performance) {
-		// eslint-disable-next-line @typescript-eslint/no-require-imports
-		performance = require("perf_hooks").performance;
-	}
-	return performance!;
+  if (!performance) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    performance = require('perf_hooks').performance
+  }
+  return performance!
 }
 
 export function formatMs(ms: number): string {
-	return ms.toFixed(3);
+  return ms.toFixed(3)
 }
 
 /**
@@ -31,14 +31,16 @@ export function formatMs(ms: number): string {
  * based on their expected magnitude (startup uses 8/7, query uses 10/9).
  */
 export function formatTimelineLine(
-	totalMs: number,
-	deltaMs: number,
-	name: string,
-	memory: NodeJS.MemoryUsage | undefined,
-	totalPad: number,
-	deltaPad: number,
-	extra = "",
+  totalMs: number,
+  deltaMs: number,
+  name: string,
+  memory: NodeJS.MemoryUsage | undefined,
+  totalPad: number,
+  deltaPad: number,
+  extra = '',
 ): string {
-	const memInfo = memory ? ` | RSS: ${formatFileSize(memory.rss)}, Heap: ${formatFileSize(memory.heapUsed)}` : "";
-	return `[+${formatMs(totalMs).padStart(totalPad)}ms] (+${formatMs(deltaMs).padStart(deltaPad)}ms) ${name}${extra}${memInfo}`;
+  const memInfo = memory
+    ? ` | RSS: ${formatFileSize(memory.rss)}, Heap: ${formatFileSize(memory.heapUsed)}`
+    : ''
+  return `[+${formatMs(totalMs).padStart(totalPad)}ms] (+${formatMs(deltaMs).padStart(deltaPad)}ms) ${name}${extra}${memInfo}`
 }

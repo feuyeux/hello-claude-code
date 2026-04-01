@@ -1,5 +1,11 @@
 # 用户输入、Slash 命令与队列分发
 
+## 0. 阅读提示
+
+- 这篇解释“用户敲下回车之后，系统如何决定这是不是一次真正进入模型的 turn”。
+- 最好在 [03-repl-and-state.md](./03-repl-and-state.md) 之后读；接下来通常会自然衔接到 [05-query-and-request.md](./05-query-and-request.md)。
+- 阅读时重点关注三类分流：输入类型分流、队列与中断分流、slash command 的本地执行与模型执行分流。
+
 ## 1. 这一层解决什么问题
 
 对于用户来说，看到的是“输入一行文本然后 Claude 开始回答”。但在源码里，输入层至少要解决下面几类问题：
@@ -37,7 +43,7 @@ flowchart TB
     I --> L
     J --> L
     L --> M{有新消息且 shouldQuery}
-    M -- 是 --> N[onQuery(...)]
+    M -- 是 --> N["onQuery(...)"]
     M -- 否 --> O[只更新本地 UI / 消息]
 ```
 

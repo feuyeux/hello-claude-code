@@ -1,12 +1,12 @@
-import { isAutoMemoryEnabled } from "../../memdir/paths.js";
-import { registerBundledSkill } from "../bundledSkills.js";
+import { isAutoMemoryEnabled } from '../../memdir/paths.js'
+import { registerBundledSkill } from '../bundledSkills.js'
 
 export function registerRememberSkill(): void {
-	if (process.env.USER_TYPE !== "ant") {
-		return;
-	}
+  if (process.env.USER_TYPE !== 'ant') {
+    return
+  }
 
-	const SKILL_PROMPT = `# Memory Review
+  const SKILL_PROMPT = `# Memory Review
 
 ## Goal
 Review the user's memory landscape and produce a clear report of proposed changes, grouped by action type. Do NOT apply changes — present proposals for user approval.
@@ -59,24 +59,24 @@ If auto-memory is empty, say so and offer to review CLAUDE.md for cleanup.
 - Do NOT modify files without explicit user approval
 - Do NOT create new files unless the target doesn't exist yet
 - Ask about ambiguous entries — don't guess
-`;
+`
 
-	registerBundledSkill({
-		name: "remember",
-		description:
-			"Review auto-memory entries and propose promotions to CLAUDE.md, CLAUDE.local.md, or shared memory. Also detects outdated, conflicting, and duplicate entries across memory layers.",
-		whenToUse:
-			"Use when the user wants to review, organize, or promote their auto-memory entries. Also useful for cleaning up outdated or conflicting entries across CLAUDE.md, CLAUDE.local.md, and auto-memory.",
-		userInvocable: true,
-		isEnabled: () => isAutoMemoryEnabled(),
-		async getPromptForCommand(args) {
-			let prompt = SKILL_PROMPT;
+  registerBundledSkill({
+    name: 'remember',
+    description:
+      'Review auto-memory entries and propose promotions to CLAUDE.md, CLAUDE.local.md, or shared memory. Also detects outdated, conflicting, and duplicate entries across memory layers.',
+    whenToUse:
+      'Use when the user wants to review, organize, or promote their auto-memory entries. Also useful for cleaning up outdated or conflicting entries across CLAUDE.md, CLAUDE.local.md, and auto-memory.',
+    userInvocable: true,
+    isEnabled: () => isAutoMemoryEnabled(),
+    async getPromptForCommand(args) {
+      let prompt = SKILL_PROMPT
 
-			if (args) {
-				prompt += `\n## Additional context from user\n\n${args}`;
-			}
+      if (args) {
+        prompt += `\n## Additional context from user\n\n${args}`
+      }
 
-			return [{ type: "text", text: prompt }];
-		},
-	});
+      return [{ type: 'text', text: prompt }]
+    },
+  })
 }

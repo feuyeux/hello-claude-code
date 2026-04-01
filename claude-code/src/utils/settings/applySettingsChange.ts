@@ -1,17 +1,17 @@
-import type { AppState } from "../../state/AppState.js";
-import { logForDebugging } from "../debug.js";
-import { updateHooksConfigSnapshot } from "../hooks/hooksConfigSnapshot.js";
+import type { AppState } from '../../state/AppState.js'
+import { logForDebugging } from '../debug.js'
+import { updateHooksConfigSnapshot } from '../hooks/hooksConfigSnapshot.js'
 import {
-	createDisabledBypassPermissionsContext,
-	findOverlyBroadBashPermissions,
-	isBypassPermissionsModeDisabled,
-	removeDangerousPermissions,
-	transitionPlanAutoMode,
-} from "../permissions/permissionSetup.js";
-import { syncPermissionRulesFromDisk } from "../permissions/permissions.js";
-import { loadAllPermissionRulesFromDisk } from "../permissions/permissionsLoader.js";
-import type { SettingSource } from "./constants.js";
-import { getInitialSettings } from "./settings.js";
+  createDisabledBypassPermissionsContext,
+  findOverlyBroadBashPermissions,
+  isBypassPermissionsModeDisabled,
+  removeDangerousPermissions,
+  transitionPlanAutoMode,
+} from '../permissions/permissionSetup.js'
+import { syncPermissionRulesFromDisk } from '../permissions/permissions.js'
+import { loadAllPermissionRulesFromDisk } from '../permissions/permissionsLoader.js'
+import type { SettingSource } from './constants.js'
+import { getInitialSettings } from './settings.js'
 
 /**
  * Apply a settings change to app state. Re-reads settings from disk,
@@ -31,51 +31,62 @@ import { getInitialSettings } from "./settings.js";
  * `onChangeAppState` which fires when `settings` changes in state.
  */
 export function applySettingsChange(
-	source: SettingSource,
-	setAppState: (f: (prev: AppState) => AppState) => void,
+  source: SettingSource,
+  setAppState: (f: (prev: AppState) => AppState) => void,
 ): void {
-	const newSettings = getInitialSettings();
+  const newSettings = getInitialSettings()
 
-	logForDebugging(`Settings changed from ${source}, updating app state`);
+  logForDebugging(`Settings changed from ${source}, updating app state`)
 
-	const updatedRules = loadAllPermissionRulesFromDisk();
-	updateHooksConfigSnapshot();
+  const updatedRules = loadAllPermissionRulesFromDisk()
+  updateHooksConfigSnapshot()
 
-	setAppState((prev) => {
-		let newContext = syncPermissionRulesFromDisk(prev.toolPermissionContext, updatedRules);
+  setAppState(prev => {
+    let newContext = syncPermissionRulesFromDisk(
+      prev.toolPermissionContext,
+      updatedRules,
+    )
 
-		// Ant-only: re-strip overly broad Bash allow rules after settings sync
-		if (process.env.USER_TYPE === "ant" && process.env.CLAUDE_CODE_ENTRYPOINT !== "local-agent") {
-			const overlyBroad = findOverlyBroadBashPermissions(updatedRules, []);
-			if (overlyBroad.length > 0) {
-				newContext = removeDangerousPermissions(newContext, overlyBroad);
-			}
-		}
+    // Ant-only: re-strip overly broad Bash allow rules after settings sync
+    if (
+      process.env.USER_TYPE === 'ant' &&
+      process.env.CLAUDE_CODE_ENTRYPOINT !== 'local-agent'
+    ) {
+      const overlyBroad = findOverlyBroadBashPermissions(updatedRules, [])
+      if (overlyBroad.length > 0) {
+        newContext = removeDangerousPermissions(newContext, overlyBroad)
+      }
+    }
 
-		if (newContext.isBypassPermissionsModeAvailable && isBypassPermissionsModeDisabled()) {
-			newContext = createDisabledBypassPermissionsContext(newContext);
-		}
+    if (
+      newContext.isBypassPermissionsModeAvailable &&
+      isBypassPermissionsModeDisabled()
+    ) {
+      newContext = createDisabledBypassPermissionsContext(newContext)
+    }
 
-		newContext = transitionPlanAutoMode(newContext);
+    newContext = transitionPlanAutoMode(newContext)
 
-		// Sync effortLevel from settings to top-level AppState when it changes
-		// (e.g. via applyFlagSettings from IDE). Only propagate if the setting
-		// itself changed — otherwise unrelated settings churn (e.g. tips dismissal
-		// on startup) would clobber a --effort CLI flag value held in AppState.
-		const prevEffort = prev.settings.effortLevel;
-		const newEffort = newSettings.effortLevel;
-		const effortChanged = prevEffort !== newEffort;
+    // Sync effortLevel from settings to top-level AppState when it changes
+    // (e.g. via applyFlagSettings from IDE). Only propagate if the setting
+    // itself changed — otherwise unrelated settings churn (e.g. tips dismissal
+    // on startup) would clobber a --effort CLI flag value held in AppState.
+    const prevEffort = prev.settings.effortLevel
+    const newEffort = newSettings.effortLevel
+    const effortChanged = prevEffort !== newEffort
 
-		return {
-			...prev,
-			settings: newSettings,
-			toolPermissionContext: newContext,
-			// Only propagate a defined new value — when the disk key is absent
-			// (e.g. /effort max for non-ants writes undefined; --effort CLI flag),
-			// prev.settings.effortLevel can be stale (internal writes suppress the
-			// watcher that would resync AppState.settings), so effortChanged would
-			// be true and we'd wipe a session-scoped value held in effortValue.
-			...(effortChanged && newEffort !== undefined ? { effortValue: newEffort } : {}),
-		};
-	});
+    return {
+      ...prev,
+      settings: newSettings,
+      toolPermissionContext: newContext,
+      // Only propagate a defined new value — when the disk key is absent
+      // (e.g. /effort max for non-ants writes undefined; --effort CLI flag),
+      // prev.settings.effortLevel can be stale (internal writes suppress the
+      // watcher that would resync AppState.settings), so effortChanged would
+      // be true and we'd wipe a session-scoped value held in effortValue.
+      ...(effortChanged && newEffort !== undefined
+        ? { effortValue: newEffort }
+        : {}),
+    }
+  })
 }

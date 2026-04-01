@@ -1,19 +1,22 @@
-import { useCallback, useMemo, useState } from "react";
-import useApp from "../ink/hooks/use-app.js";
-import type { KeybindingContextName } from "../keybindings/types.js";
-import { useDoublePress } from "./useDoublePress.js";
+import { useCallback, useMemo, useState } from 'react'
+import useApp from '../ink/hooks/use-app.js'
+import type { KeybindingContextName } from '../keybindings/types.js'
+import { useDoublePress } from './useDoublePress.js'
 
 export type ExitState = {
-	pending: boolean;
-	keyName: "Ctrl-C" | "Ctrl-D" | null;
-};
+  pending: boolean
+  keyName: 'Ctrl-C' | 'Ctrl-D' | null
+}
 
 type KeybindingOptions = {
-	context?: KeybindingContextName;
-	isActive?: boolean;
-};
+  context?: KeybindingContextName
+  isActive?: boolean
+}
 
-type UseKeybindingsHook = (handlers: Record<string, () => void>, options?: KeybindingOptions) => void;
+type UseKeybindingsHook = (
+  handlers: Record<string, () => void>,
+  options?: KeybindingOptions,
+) => void
 
 /**
  * Handle ctrl+c and ctrl+d for exiting the application.
@@ -40,47 +43,53 @@ type UseKeybindingsHook = (handlers: Record<string, () => void>, options?: Keybi
  *                   before parent useKeybindings, so both see every keypress).
  */
 export function useExitOnCtrlCD(
-	useKeybindingsHook: UseKeybindingsHook,
-	onInterrupt?: () => boolean,
-	onExit?: () => void,
-	isActive = true,
+  useKeybindingsHook: UseKeybindingsHook,
+  onInterrupt?: () => boolean,
+  onExit?: () => void,
+  isActive = true,
 ): ExitState {
-	const { exit } = useApp();
-	const [exitState, setExitState] = useState<ExitState>({
-		pending: false,
-		keyName: null,
-	});
+  const { exit } = useApp()
+  const [exitState, setExitState] = useState<ExitState>({
+    pending: false,
+    keyName: null,
+  })
 
-	const exitFn = useMemo(() => onExit ?? exit, [onExit, exit]);
+  const exitFn = useMemo(() => onExit ?? exit, [onExit, exit])
 
-	// Double-press handler for ctrl+c
-	const handleCtrlCDoublePress = useDoublePress((pending) => setExitState({ pending, keyName: "Ctrl-C" }), exitFn);
+  // Double-press handler for ctrl+c
+  const handleCtrlCDoublePress = useDoublePress(
+    pending => setExitState({ pending, keyName: 'Ctrl-C' }),
+    exitFn,
+  )
 
-	// Double-press handler for ctrl+d
-	const handleCtrlDDoublePress = useDoublePress((pending) => setExitState({ pending, keyName: "Ctrl-D" }), exitFn);
+  // Double-press handler for ctrl+d
+  const handleCtrlDDoublePress = useDoublePress(
+    pending => setExitState({ pending, keyName: 'Ctrl-D' }),
+    exitFn,
+  )
 
-	// Handler for app:interrupt (ctrl+c by default)
-	// Let features handle interrupt first via callback
-	const handleInterrupt = useCallback(() => {
-		if (onInterrupt?.()) return; // Feature handled it
-		handleCtrlCDoublePress();
-	}, [handleCtrlCDoublePress, onInterrupt]);
+  // Handler for app:interrupt (ctrl+c by default)
+  // Let features handle interrupt first via callback
+  const handleInterrupt = useCallback(() => {
+    if (onInterrupt?.()) return // Feature handled it
+    handleCtrlCDoublePress()
+  }, [handleCtrlCDoublePress, onInterrupt])
 
-	// Handler for app:exit (ctrl+d by default)
-	// This also uses double-press to confirm exit
-	const handleExit = useCallback(() => {
-		handleCtrlDDoublePress();
-	}, [handleCtrlDDoublePress]);
+  // Handler for app:exit (ctrl+d by default)
+  // This also uses double-press to confirm exit
+  const handleExit = useCallback(() => {
+    handleCtrlDDoublePress()
+  }, [handleCtrlDDoublePress])
 
-	const handlers = useMemo(
-		() => ({
-			"app:interrupt": handleInterrupt,
-			"app:exit": handleExit,
-		}),
-		[handleInterrupt, handleExit],
-	);
+  const handlers = useMemo(
+    () => ({
+      'app:interrupt': handleInterrupt,
+      'app:exit': handleExit,
+    }),
+    [handleInterrupt, handleExit],
+  )
 
-	useKeybindingsHook(handlers, { context: "Global", isActive });
+  useKeybindingsHook(handlers, { context: 'Global', isActive })
 
-	return exitState;
+  return exitState
 }

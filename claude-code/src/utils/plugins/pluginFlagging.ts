@@ -12,96 +12,101 @@
  * with writes.
  */
 
-import { randomBytes } from "crypto";
-import { readFile, rename, unlink, writeFile } from "fs/promises";
-import { join } from "path";
-import { logForDebugging } from "../debug.js";
-import { getFsImplementation } from "../fsOperations.js";
-import { logError } from "../log.js";
-import { jsonParse, jsonStringify } from "../slowOperations.js";
-import { getPluginsDirectory } from "./pluginDirectories.js";
+import { randomBytes } from 'crypto'
+import { readFile, rename, unlink, writeFile } from 'fs/promises'
+import { join } from 'path'
+import { logForDebugging } from '../debug.js'
+import { getFsImplementation } from '../fsOperations.js'
+import { logError } from '../log.js'
+import { jsonParse, jsonStringify } from '../slowOperations.js'
+import { getPluginsDirectory } from './pluginDirectories.js'
 
-const FLAGGED_PLUGINS_FILENAME = "flagged-plugins.json";
+const FLAGGED_PLUGINS_FILENAME = 'flagged-plugins.json'
 
 export type FlaggedPlugin = {
-	flaggedAt: string;
-	seenAt?: string;
-};
+  flaggedAt: string
+  seenAt?: string
+}
 
-const SEEN_EXPIRY_MS = 48 * 60 * 60 * 1000; // 48 hours
+const SEEN_EXPIRY_MS = 48 * 60 * 60 * 1000 // 48 hours
 
 // Module-level cache — populated by loadFlaggedPlugins(), updated by writes.
-let cache: Record<string, FlaggedPlugin> | null = null;
+let cache: Record<string, FlaggedPlugin> | null = null
 
 function getFlaggedPluginsPath(): string {
-	return join(getPluginsDirectory(), FLAGGED_PLUGINS_FILENAME);
+  return join(getPluginsDirectory(), FLAGGED_PLUGINS_FILENAME)
 }
 
 function parsePluginsData(content: string): Record<string, FlaggedPlugin> {
-	const parsed = jsonParse(content) as unknown;
-	if (
-		typeof parsed !== "object" ||
-		parsed === null ||
-		!("plugins" in parsed) ||
-		typeof (parsed as { plugins: unknown }).plugins !== "object" ||
-		(parsed as { plugins: unknown }).plugins === null
-	) {
-		return {};
-	}
-	const plugins = (parsed as { plugins: Record<string, unknown> }).plugins;
-	const result: Record<string, FlaggedPlugin> = {};
-	for (const [id, entry] of Object.entries(plugins)) {
-		if (
-			entry &&
-			typeof entry === "object" &&
-			"flaggedAt" in entry &&
-			typeof (entry as { flaggedAt: unknown }).flaggedAt === "string"
-		) {
-			const parsed: FlaggedPlugin = {
-				flaggedAt: (entry as { flaggedAt: string }).flaggedAt,
-			};
-			if ("seenAt" in entry && typeof (entry as { seenAt: unknown }).seenAt === "string") {
-				parsed.seenAt = (entry as { seenAt: string }).seenAt;
-			}
-			result[id] = parsed;
-		}
-	}
-	return result;
+  const parsed = jsonParse(content) as unknown
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('plugins' in parsed) ||
+    typeof (parsed as { plugins: unknown }).plugins !== 'object' ||
+    (parsed as { plugins: unknown }).plugins === null
+  ) {
+    return {}
+  }
+  const plugins = (parsed as { plugins: Record<string, unknown> }).plugins
+  const result: Record<string, FlaggedPlugin> = {}
+  for (const [id, entry] of Object.entries(plugins)) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'flaggedAt' in entry &&
+      typeof (entry as { flaggedAt: unknown }).flaggedAt === 'string'
+    ) {
+      const parsed: FlaggedPlugin = {
+        flaggedAt: (entry as { flaggedAt: string }).flaggedAt,
+      }
+      if (
+        'seenAt' in entry &&
+        typeof (entry as { seenAt: unknown }).seenAt === 'string'
+      ) {
+        parsed.seenAt = (entry as { seenAt: string }).seenAt
+      }
+      result[id] = parsed
+    }
+  }
+  return result
 }
 
 async function readFromDisk(): Promise<Record<string, FlaggedPlugin>> {
-	try {
-		const content = await readFile(getFlaggedPluginsPath(), {
-			encoding: "utf-8",
-		});
-		return parsePluginsData(content);
-	} catch {
-		return {};
-	}
+  try {
+    const content = await readFile(getFlaggedPluginsPath(), {
+      encoding: 'utf-8',
+    })
+    return parsePluginsData(content)
+  } catch {
+    return {}
+  }
 }
 
-async function writeToDisk(plugins: Record<string, FlaggedPlugin>): Promise<void> {
-	const filePath = getFlaggedPluginsPath();
-	const tempPath = `${filePath}.${randomBytes(8).toString("hex")}.tmp`;
+async function writeToDisk(
+  plugins: Record<string, FlaggedPlugin>,
+): Promise<void> {
+  const filePath = getFlaggedPluginsPath()
+  const tempPath = `${filePath}.${randomBytes(8).toString('hex')}.tmp`
 
-	try {
-		await getFsImplementation().mkdir(getPluginsDirectory());
+  try {
+    await getFsImplementation().mkdir(getPluginsDirectory())
 
-		const content = jsonStringify({ plugins }, null, 2);
-		await writeFile(tempPath, content, {
-			encoding: "utf-8",
-			mode: 0o600,
-		});
-		await rename(tempPath, filePath);
-		cache = plugins;
-	} catch (error) {
-		logError(error);
-		try {
-			await unlink(tempPath);
-		} catch {
-			// Ignore cleanup errors
-		}
-	}
+    const content = jsonStringify({ plugins }, null, 2)
+    await writeFile(tempPath, content, {
+      encoding: 'utf-8',
+      mode: 0o600,
+    })
+    await rename(tempPath, filePath)
+    cache = plugins
+  } catch (error) {
+    logError(error)
+    try {
+      await unlink(tempPath)
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
 }
 
 /**
@@ -110,21 +115,24 @@ async function writeToDisk(plugins: Record<string, FlaggedPlugin>): Promise<void
  * meaningful data. Called by useManagePlugins during plugin refresh.
  */
 export async function loadFlaggedPlugins(): Promise<void> {
-	const all = await readFromDisk();
-	const now = Date.now();
-	let changed = false;
+  const all = await readFromDisk()
+  const now = Date.now()
+  let changed = false
 
-	for (const [id, entry] of Object.entries(all)) {
-		if (entry.seenAt && now - new Date(entry.seenAt).getTime() >= SEEN_EXPIRY_MS) {
-			delete all[id];
-			changed = true;
-		}
-	}
+  for (const [id, entry] of Object.entries(all)) {
+    if (
+      entry.seenAt &&
+      now - new Date(entry.seenAt).getTime() >= SEEN_EXPIRY_MS
+    ) {
+      delete all[id]
+      changed = true
+    }
+  }
 
-	cache = all;
-	if (changed) {
-		await writeToDisk(all);
-	}
+  cache = all
+  if (changed) {
+    await writeToDisk(all)
+  }
 }
 
 /**
@@ -132,7 +140,7 @@ export async function loadFlaggedPlugins(): Promise<void> {
  * Returns an empty object if loadFlaggedPlugins() has not been called yet.
  */
 export function getFlaggedPlugins(): Record<string, FlaggedPlugin> {
-	return cache ?? {};
+  return cache ?? {}
 }
 
 /**
@@ -141,19 +149,19 @@ export function getFlaggedPlugins(): Record<string, FlaggedPlugin> {
  * @param pluginId "name@marketplace" format
  */
 export async function addFlaggedPlugin(pluginId: string): Promise<void> {
-	if (cache === null) {
-		cache = await readFromDisk();
-	}
+  if (cache === null) {
+    cache = await readFromDisk()
+  }
 
-	const updated = {
-		...cache,
-		[pluginId]: {
-			flaggedAt: new Date().toISOString(),
-		},
-	};
+  const updated = {
+    ...cache,
+    [pluginId]: {
+      flaggedAt: new Date().toISOString(),
+    },
+  }
 
-	await writeToDisk(updated);
-	logForDebugging(`Flagged plugin: ${pluginId}`);
+  await writeToDisk(updated)
+  logForDebugging(`Flagged plugin: ${pluginId}`)
 }
 
 /**
@@ -161,25 +169,27 @@ export async function addFlaggedPlugin(pluginId: string): Promise<void> {
  * flagged plugins. Sets seenAt on entries that don't already have it.
  * After 48 hours from seenAt, entries are auto-cleared on next load.
  */
-export async function markFlaggedPluginsSeen(pluginIds: string[]): Promise<void> {
-	if (cache === null) {
-		cache = await readFromDisk();
-	}
-	const now = new Date().toISOString();
-	let changed = false;
+export async function markFlaggedPluginsSeen(
+  pluginIds: string[],
+): Promise<void> {
+  if (cache === null) {
+    cache = await readFromDisk()
+  }
+  const now = new Date().toISOString()
+  let changed = false
 
-	const updated = { ...cache };
-	for (const id of pluginIds) {
-		const entry = updated[id];
-		if (entry && !entry.seenAt) {
-			updated[id] = { ...entry, seenAt: now };
-			changed = true;
-		}
-	}
+  const updated = { ...cache }
+  for (const id of pluginIds) {
+    const entry = updated[id]
+    if (entry && !entry.seenAt) {
+      updated[id] = { ...entry, seenAt: now }
+      changed = true
+    }
+  }
 
-	if (changed) {
-		await writeToDisk(updated);
-	}
+  if (changed) {
+    await writeToDisk(updated)
+  }
 }
 
 /**
@@ -187,12 +197,12 @@ export async function markFlaggedPluginsSeen(pluginIds: string[]): Promise<void>
  * a flagged plugin notification in /plugins.
  */
 export async function removeFlaggedPlugin(pluginId: string): Promise<void> {
-	if (cache === null) {
-		cache = await readFromDisk();
-	}
-	if (!(pluginId in cache)) return;
+  if (cache === null) {
+    cache = await readFromDisk()
+  }
+  if (!(pluginId in cache)) return
 
-	const { [pluginId]: _, ...rest } = cache;
-	cache = rest;
-	await writeToDisk(rest);
+  const { [pluginId]: _, ...rest } = cache
+  cache = rest
+  await writeToDisk(rest)
 }

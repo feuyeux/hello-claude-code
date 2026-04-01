@@ -1,7 +1,7 @@
-import { execFile as execFileCb } from "child_process";
-import { promisify } from "util";
+import { execFile as execFileCb } from 'child_process'
+import { promisify } from 'util'
 
-const execFileAsync = promisify(execFileCb);
+const execFileAsync = promisify(execFileCb)
 
 /**
  * Portable worktree detection using only child_process — no analytics,
@@ -10,14 +10,18 @@ const execFileAsync = promisify(execFileCb);
  * dependency chain (execa → cross-spawn → which).
  */
 export async function getWorktreePathsPortable(cwd: string): Promise<string[]> {
-	try {
-		const { stdout } = await execFileAsync("git", ["worktree", "list", "--porcelain"], { cwd, timeout: 5000 });
-		if (!stdout) return [];
-		return stdout
-			.split("\n")
-			.filter((line) => line.startsWith("worktree "))
-			.map((line) => line.slice("worktree ".length).normalize("NFC"));
-	} catch {
-		return [];
-	}
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['worktree', 'list', '--porcelain'],
+      { cwd, timeout: 5000 },
+    )
+    if (!stdout) return []
+    return stdout
+      .split('\n')
+      .filter(line => line.startsWith('worktree '))
+      .map(line => line.slice('worktree '.length).normalize('NFC'))
+  } catch {
+    return []
+  }
 }

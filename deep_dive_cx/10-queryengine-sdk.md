@@ -1,5 +1,11 @@
 # `QueryEngine` 与 SDK/非交互路径
 
+## 0. 阅读提示
+
+- 这篇解释的是“没有 REPL 时，系统如何仍然复用同一套 query 内核”。
+- 建议在 [05-query-and-request.md](./05-query-and-request.md) 之后阅读；如果你还没建立交互式路径的心智模型，先补 [03-repl-and-state.md](./03-repl-and-state.md) 会更顺。
+- 阅读时重点对照 REPL 路径与 headless 路径的同与不同，而不是把 `QueryEngine` 当成另一套完全独立的实现。
+
 ## 1. 为什么还要专门讲 `QueryEngine`
 
 前面几篇文档主要以交互式 REPL 为主线，但这个仓库并不只有一种运行方式。
@@ -285,7 +291,7 @@ flowchart TB
     B --> D[processUserInput]
     D --> E{shouldQuery}
     E -- 否 --> F[直接产出本地 SDK 结果]
-    E -- 是 --> G[query()]
+    E -- 是 --> G["query()"]
     G --> H[内部 Message 流]
     H --> I[normalize 成 SDKMessage]
     I --> J[result / progress / assistant / system_init]

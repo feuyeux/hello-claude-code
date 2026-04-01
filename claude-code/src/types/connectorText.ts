@@ -1,15 +1,4 @@
-// Stub: ConnectorText is an Anthropic-internal feature (feature flag CONNECTOR_TEXT, always false).
-
-export type ConnectorTextBlock = {
-	type: "connector_text";
-	text: string;
-};
-
-export type ConnectorTextDelta = {
-	type: "connector_text_delta";
-	text: string;
-};
-
-export function isConnectorTextBlock(block: unknown): block is ConnectorTextBlock {
-	return false;
-}
+// Auto-generated stub — replace with real implementation
+export type ConnectorTextBlock = { type: string; connector_text: string; signature?: string; [key: string]: unknown };
+export type ConnectorTextDelta = { type: string; connector_text: string; text?: string; thinking?: string; signature?: string; [key: string]: unknown };
+export const isConnectorTextBlock: (block: unknown) => block is ConnectorTextBlock = (_block): _block is ConnectorTextBlock => false;

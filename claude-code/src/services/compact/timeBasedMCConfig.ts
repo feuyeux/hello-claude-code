@@ -1,4 +1,4 @@
-import { getFeatureValue_CACHED_MAY_BE_STALE } from "../analytics/growthbook.js";
+import { getFeatureValue_CACHED_MAY_BE_STALE } from '../analytics/growthbook.js'
 
 /**
  * GrowthBook config for time-based microcompact.
@@ -16,25 +16,28 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from "../analytics/growthbook.js"
  * doesn't apply.
  */
 export type TimeBasedMCConfig = {
-	/** Master switch. When false, time-based microcompact is a no-op. */
-	enabled: boolean;
-	/** Trigger when (now − last assistant timestamp) exceeds this many minutes.
-	 *  60 is the safe choice: the server's 1h cache TTL is guaranteed expired
-	 *  for all users, so we never force a miss that wouldn't have happened. */
-	gapThresholdMinutes: number;
-	/** Keep this many most-recent compactable tool results.
-	 *  When set, takes priority over any default; older results are cleared. */
-	keepRecent: number;
-};
+  /** Master switch. When false, time-based microcompact is a no-op. */
+  enabled: boolean
+  /** Trigger when (now − last assistant timestamp) exceeds this many minutes.
+   *  60 is the safe choice: the server's 1h cache TTL is guaranteed expired
+   *  for all users, so we never force a miss that wouldn't have happened. */
+  gapThresholdMinutes: number
+  /** Keep this many most-recent compactable tool results.
+   *  When set, takes priority over any default; older results are cleared. */
+  keepRecent: number
+}
 
 const TIME_BASED_MC_CONFIG_DEFAULTS: TimeBasedMCConfig = {
-	enabled: false,
-	gapThresholdMinutes: 60,
-	keepRecent: 5,
-};
+  enabled: false,
+  gapThresholdMinutes: 60,
+  keepRecent: 5,
+}
 
 export function getTimeBasedMCConfig(): TimeBasedMCConfig {
-	// Hoist the GB read so exposure fires on every eval path, not just when
-	// the caller's other conditions (querySource, messages.length) pass.
-	return getFeatureValue_CACHED_MAY_BE_STALE<TimeBasedMCConfig>("tengu_slate_heron", TIME_BASED_MC_CONFIG_DEFAULTS);
+  // Hoist the GB read so exposure fires on every eval path, not just when
+  // the caller's other conditions (querySource, messages.length) pass.
+  return getFeatureValue_CACHED_MAY_BE_STALE<TimeBasedMCConfig>(
+    'tengu_slate_heron',
+    TIME_BASED_MC_CONFIG_DEFAULTS,
+  )
 }

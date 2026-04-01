@@ -1,5 +1,11 @@
 # REPL 与状态管理
 
+## 0. 阅读提示
+
+- 这篇聚焦交互模式下的控制中心，也就是 `REPL.tsx` 周边的状态、事件和消息流。
+- 建议先看 [02-startup-flow.md](./02-startup-flow.md)，再看这篇；接下来通常会顺着读到 [04-input-command-queue.md](./04-input-command-queue.md) 和 [05-query-and-request.md](./05-query-and-request.md)。
+- 阅读时不要把 `REPL.tsx` 当“视图组件”，而要把它当“会话控制器 + UI 容器”。
+
 ## 1. 为什么 `REPL.tsx` 是理解全工程的第二入口
 
 很多人阅读这类项目时，会误以为 `query.ts` 才是唯一核心。实际上对于交互模式来说，真正的运行控制中心是：
@@ -352,7 +358,7 @@ flowchart LR
     H --> I[getToolUseContext]
     I --> J[加载 system/user/system context]
     J --> K[buildEffectiveSystemPrompt]
-    K --> L[query()]
+    K --> L["query()"]
     L --> M[onQueryEvent]
     M --> N[setMessages / setStreamingState]
 ```

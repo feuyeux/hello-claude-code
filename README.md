@@ -8,17 +8,6 @@
 
 ---
 
-## 🔍 项目背景
-
-本项目由一名关注以下领域的大学生维护：
-- **软件供应链安全**：研究构建产物（Build Artifacts）泄露风险。
-- **安全软件工程**：分析真实世界中 CLI 系统的防御性编程。
-- **Agentic Tooling**：剖析 Anthropic 官方开发工具的底层实现。
-
-> [!IMPORTANT]
-> 本项目仅用于**教育与安全研究**，不代表 Anthropic 官方，且不主张任何原始代码的所有权。
-
----
 
 ## 📚 深度分析报告
 
@@ -30,14 +19,6 @@
 | **Codex 视角** | 源码逻辑与实现细节 | [**查看报告 (Deep Dive CX)**](./deep_dive_cx/README.md) |
 | **Claude 视角** | 产品思维与 Agent 演进 | [**查看报告 (Deep Dive CC)**](./deep_dive_cc/README.md) |
 
-### 核心主题快照
-- [**整体架构概览**](./deep_dive_gi/01_architecture_overview.md)
-- [**启动性能优化**](./deep_dive_gi/02_startup_flow.md)
-- [**请求处理状态机**](./deep_dive_gi/03_request_flow.md)
-- [**MCP 协议集成**](./deep_dive_gi/07_mcp_protocol.md)
-- [**上下文治理与压缩**](./deep_dive_gi/10_context_compaction.md)
-
----
 
 ## 🏗️ 项目架构速览
 
@@ -58,6 +39,17 @@ Claude Code 是一个基于 **Bun** 运行时，使用 **React + Ink** 构建终
 - **模式验证**: [Zod v4](https://zod.dev)
 - **代码搜索**: ripgrep
 - **核心协议**: MCP, LSP, OAuth 2.0
+
+### 本地调试
+
+```bash
+cd claude-code
+bun install
+```
+
+```bash`
+bun run dev
+```
 
 ---
 

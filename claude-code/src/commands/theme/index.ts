@@ -1,10 +1,10 @@
-import type { Command } from "../../commands.js";
+import type { Command } from '../../commands.js'
 
 const theme = {
-	type: "local-jsx",
-	name: "theme",
-	description: "Change the theme",
-	load: () => import("./theme.js"),
-} satisfies Command;
+  type: 'local-jsx',
+  name: 'theme',
+  description: 'Change the theme',
+  load: () => import('./theme.js'),
+} satisfies Command
 
-export default theme;
+export default theme

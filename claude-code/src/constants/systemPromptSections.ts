@@ -1,24 +1,27 @@
 import {
-	clearBetaHeaderLatches,
-	clearSystemPromptSectionState,
-	getSystemPromptSectionCache,
-	setSystemPromptSectionCacheEntry,
-} from "../bootstrap/state.js";
+  clearBetaHeaderLatches,
+  clearSystemPromptSectionState,
+  getSystemPromptSectionCache,
+  setSystemPromptSectionCacheEntry,
+} from '../bootstrap/state.js'
 
-type ComputeFn = () => string | null | Promise<string | null>;
+type ComputeFn = () => string | null | Promise<string | null>
 
 type SystemPromptSection = {
-	name: string;
-	compute: ComputeFn;
-	cacheBreak: boolean;
-};
+  name: string
+  compute: ComputeFn
+  cacheBreak: boolean
+}
 
 /**
  * Create a memoized system prompt section.
  * Computed once, cached until /clear or /compact.
  */
-export function systemPromptSection(name: string, compute: ComputeFn): SystemPromptSection {
-	return { name, compute, cacheBreak: false };
+export function systemPromptSection(
+  name: string,
+  compute: ComputeFn,
+): SystemPromptSection {
+  return { name, compute, cacheBreak: false }
 }
 
 /**
@@ -27,29 +30,31 @@ export function systemPromptSection(name: string, compute: ComputeFn): SystemPro
  * Requires a reason explaining why cache-breaking is necessary.
  */
 export function DANGEROUS_uncachedSystemPromptSection(
-	name: string,
-	compute: ComputeFn,
-	_reason: string,
+  name: string,
+  compute: ComputeFn,
+  _reason: string,
 ): SystemPromptSection {
-	return { name, compute, cacheBreak: true };
+  return { name, compute, cacheBreak: true }
 }
 
 /**
  * Resolve all system prompt sections, returning prompt strings.
  */
-export async function resolveSystemPromptSections(sections: SystemPromptSection[]): Promise<(string | null)[]> {
-	const cache = getSystemPromptSectionCache();
+export async function resolveSystemPromptSections(
+  sections: SystemPromptSection[],
+): Promise<(string | null)[]> {
+  const cache = getSystemPromptSectionCache()
 
-	return Promise.all(
-		sections.map(async (s) => {
-			if (!s.cacheBreak && cache.has(s.name)) {
-				return cache.get(s.name) ?? null;
-			}
-			const value = await s.compute();
-			setSystemPromptSectionCacheEntry(s.name, value);
-			return value;
-		}),
-	);
+  return Promise.all(
+    sections.map(async s => {
+      if (!s.cacheBreak && cache.has(s.name)) {
+        return cache.get(s.name) ?? null
+      }
+      const value = await s.compute()
+      setSystemPromptSectionCacheEntry(s.name, value)
+      return value
+    }),
+  )
 }
 
 /**
@@ -58,6 +63,6 @@ export async function resolveSystemPromptSections(sections: SystemPromptSection[
  * evaluation of AFK/fast-mode/cache-editing headers.
  */
 export function clearSystemPromptSections(): void {
-	clearSystemPromptSectionState();
-	clearBetaHeaderLatches();
+  clearSystemPromptSectionState()
+  clearBetaHeaderLatches()
 }

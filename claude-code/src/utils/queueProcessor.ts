@@ -1,28 +1,33 @@
-import type { QueuedCommand } from "../types/textInputTypes.js";
-import { dequeue, dequeueAllMatching, hasCommandsInQueue, peek } from "./messageQueueManager.js";
+import type { QueuedCommand } from '../types/textInputTypes.js'
+import {
+  dequeue,
+  dequeueAllMatching,
+  hasCommandsInQueue,
+  peek,
+} from './messageQueueManager.js'
 
 type ProcessQueueParams = {
-	executeInput: (commands: QueuedCommand[]) => Promise<void>;
-};
+  executeInput: (commands: QueuedCommand[]) => Promise<void>
+}
 
 type ProcessQueueResult = {
-	processed: boolean;
-};
+  processed: boolean
+}
 
 /**
  * Check if a queued command is a slash command (value starts with '/').
  */
 function isSlashCommand(cmd: QueuedCommand): boolean {
-	if (typeof cmd.value === "string") {
-		return cmd.value.trim().startsWith("/");
-	}
-	// For ContentBlockParam[], check the first text block
-	for (const block of cmd.value) {
-		if (block.type === "text") {
-			return block.text.trim().startsWith("/");
-		}
-	}
-	return false;
+  if (typeof cmd.value === 'string') {
+    return cmd.value.trim().startsWith('/')
+  }
+  // For ContentBlockParam[], check the first text block
+  for (const block of cmd.value) {
+    if (block.type === 'text') {
+      return block.text.trim().startsWith('/')
+    }
+  }
+  return false
 }
 
 /**
@@ -44,37 +49,41 @@ function isSlashCommand(cmd: QueuedCommand): boolean {
  *
  * @returns result with processed status
  */
-export function processQueueIfReady({ executeInput }: ProcessQueueParams): ProcessQueueResult {
-	// This processor runs on the REPL main thread between turns. Skip anything
-	// addressed to a subagent — an unfiltered peek() returning a subagent
-	// notification would set targetMode, dequeueAllMatching would find nothing
-	// matching that mode with agentId===undefined, and we'd return processed:
-	// false with the queue unchanged → the React effect never re-fires and any
-	// queued user prompt stalls permanently.
-	const isMainThread = (cmd: QueuedCommand) => cmd.agentId === undefined;
+export function processQueueIfReady({
+  executeInput,
+}: ProcessQueueParams): ProcessQueueResult {
+  // This processor runs on the REPL main thread between turns. Skip anything
+  // addressed to a subagent — an unfiltered peek() returning a subagent
+  // notification would set targetMode, dequeueAllMatching would find nothing
+  // matching that mode with agentId===undefined, and we'd return processed:
+  // false with the queue unchanged → the React effect never re-fires and any
+  // queued user prompt stalls permanently.
+  const isMainThread = (cmd: QueuedCommand) => cmd.agentId === undefined
 
-	const next = peek(isMainThread);
-	if (!next) {
-		return { processed: false };
-	}
+  const next = peek(isMainThread)
+  if (!next) {
+    return { processed: false }
+  }
 
-	// Slash commands and bash-mode commands are processed individually.
-	// Bash commands need per-command error isolation, exit codes, and progress UI.
-	if (isSlashCommand(next) || next.mode === "bash") {
-		const cmd = dequeue(isMainThread)!;
-		void executeInput([cmd]);
-		return { processed: true };
-	}
+  // Slash commands and bash-mode commands are processed individually.
+  // Bash commands need per-command error isolation, exit codes, and progress UI.
+  if (isSlashCommand(next) || next.mode === 'bash') {
+    const cmd = dequeue(isMainThread)!
+    void executeInput([cmd])
+    return { processed: true }
+  }
 
-	// Drain all non-slash-command items with the same mode at once.
-	const targetMode = next.mode;
-	const commands = dequeueAllMatching((cmd) => isMainThread(cmd) && !isSlashCommand(cmd) && cmd.mode === targetMode);
-	if (commands.length === 0) {
-		return { processed: false };
-	}
+  // Drain all non-slash-command items with the same mode at once.
+  const targetMode = next.mode
+  const commands = dequeueAllMatching(
+    cmd => isMainThread(cmd) && !isSlashCommand(cmd) && cmd.mode === targetMode,
+  )
+  if (commands.length === 0) {
+    return { processed: false }
+  }
 
-	void executeInput(commands);
-	return { processed: true };
+  void executeInput(commands)
+  return { processed: true }
 }
 
 /**
@@ -82,5 +91,5 @@ export function processQueueIfReady({ executeInput }: ProcessQueueParams): Proce
  * Use this to determine if queue processing should be triggered.
  */
 export function hasQueuedCommands(): boolean {
-	return hasCommandsInQueue();
+  return hasCommandsInQueue()
 }

@@ -1,5 +1,11 @@
 # 工具系统与权限机制
 
+## 0. 阅读提示
+
+- 这篇解释的是“模型如何从输出文本，升级为持续调用工具的 Agent”。
+- 建议在 [05-query-and-request.md](./05-query-and-request.md) 之后阅读；如果你关心扩展接入，再继续看 [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)。
+- 阅读时重点看三层：工具协议层、权限判定层、执行编排层。
+
 ## 1. 为什么工具系统是这套工程的主轴
 
 在这套代码里，模型不是“只会输出文本”，而是被设计成一个会持续调用工具的 Agent。

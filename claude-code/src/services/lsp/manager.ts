@@ -1,40 +1,43 @@
-import { logForDebugging } from "../../utils/debug.js";
-import { isBareMode } from "../../utils/envUtils.js";
-import { errorMessage } from "../../utils/errors.js";
-import { logError } from "../../utils/log.js";
-import { createLSPServerManager, type LSPServerManager } from "./LSPServerManager.js";
-import { registerLSPNotificationHandlers } from "./passiveFeedback.js";
+import { logForDebugging } from '../../utils/debug.js'
+import { isBareMode } from '../../utils/envUtils.js'
+import { errorMessage } from '../../utils/errors.js'
+import { logError } from '../../utils/log.js'
+import {
+  createLSPServerManager,
+  type LSPServerManager,
+} from './LSPServerManager.js'
+import { registerLSPNotificationHandlers } from './passiveFeedback.js'
 
 /**
  * Initialization state of the LSP server manager
  */
-type InitializationState = "not-started" | "pending" | "success" | "failed";
+type InitializationState = 'not-started' | 'pending' | 'success' | 'failed'
 
 /**
  * Global singleton instance of the LSP server manager.
  * Initialized during Claude Code startup.
  */
-let lspManagerInstance: LSPServerManager | undefined;
+let lspManagerInstance: LSPServerManager | undefined
 
 /**
  * Current initialization state
  */
-let initializationState: InitializationState = "not-started";
+let initializationState: InitializationState = 'not-started'
 
 /**
  * Error from last initialization attempt, if any
  */
-let initializationError: Error | undefined;
+let initializationError: Error | undefined
 
 /**
  * Generation counter to prevent stale initialization promises from updating state
  */
-let initializationGeneration = 0;
+let initializationGeneration = 0
 
 /**
  * Promise that resolves when initialization completes (success or failure)
  */
-let initializationPromise: Promise<void> | undefined;
+let initializationPromise: Promise<void> | undefined
 
 /**
  * Test-only sync reset. shutdownLspServerManager() is async and tears down
@@ -43,10 +46,10 @@ let initializationPromise: Promise<void> | undefined;
  * tests on the same shard.
  */
 export function _resetLspManagerForTesting(): void {
-	initializationState = "not-started";
-	initializationError = undefined;
-	initializationPromise = undefined;
-	initializationGeneration++;
+  initializationState = 'not-started'
+  initializationError = undefined
+  initializationPromise = undefined
+  initializationGeneration++
 }
 
 /**
@@ -58,11 +61,11 @@ export function _resetLspManagerForTesting(): void {
  * distinguish between pending, failed, and not-started states.
  */
 export function getLspServerManager(): LSPServerManager | undefined {
-	// Don't return a broken instance if initialization failed
-	if (initializationState === "failed") {
-		return undefined;
-	}
-	return lspManagerInstance;
+  // Don't return a broken instance if initialization failed
+  if (initializationState === 'failed') {
+    return undefined
+  }
+  return lspManagerInstance
 }
 
 /**
@@ -71,23 +74,23 @@ export function getLspServerManager(): LSPServerManager | undefined {
  * @returns Status object with current state and error (if failed)
  */
 export function getInitializationStatus():
-	| { status: "not-started" }
-	| { status: "pending" }
-	| { status: "success" }
-	| { status: "failed"; error: Error } {
-	if (initializationState === "failed") {
-		return {
-			status: "failed",
-			error: initializationError || new Error("Initialization failed"),
-		};
-	}
-	if (initializationState === "not-started") {
-		return { status: "not-started" };
-	}
-	if (initializationState === "pending") {
-		return { status: "pending" };
-	}
-	return { status: "success" };
+  | { status: 'not-started' }
+  | { status: 'pending' }
+  | { status: 'success' }
+  | { status: 'failed'; error: Error } {
+  if (initializationState === 'failed') {
+    return {
+      status: 'failed',
+      error: initializationError || new Error('Initialization failed'),
+    }
+  }
+  if (initializationState === 'not-started') {
+    return { status: 'not-started' }
+  }
+  if (initializationState === 'pending') {
+    return { status: 'pending' }
+  }
+  return { status: 'success' }
 }
 
 /**
@@ -95,15 +98,15 @@ export function getInitializationStatus():
  * Backs LSPTool.isEnabled().
  */
 export function isLspConnected(): boolean {
-	if (initializationState === "failed") return false;
-	const manager = getLspServerManager();
-	if (!manager) return false;
-	const servers = manager.getAllServers();
-	if (servers.size === 0) return false;
-	for (const server of servers.values()) {
-		if (server.state !== "error") return true;
-	}
-	return false;
+  if (initializationState === 'failed') return false
+  const manager = getLspServerManager()
+  if (!manager) return false
+  const servers = manager.getAllServers()
+  if (servers.size === 0) return false
+  for (const server of servers.values()) {
+    if (server.state !== 'error') return true
+  }
+  return false
 }
 
 /**
@@ -116,17 +119,17 @@ export function isLspConnected(): boolean {
  * @returns Promise that resolves when initialization is complete
  */
 export async function waitForInitialization(): Promise<void> {
-	// If already initialized or failed, return immediately
-	if (initializationState === "success" || initializationState === "failed") {
-		return;
-	}
+  // If already initialized or failed, return immediately
+  if (initializationState === 'success' || initializationState === 'failed') {
+    return
+  }
 
-	// If pending and we have a promise, wait for it
-	if (initializationState === "pending" && initializationPromise) {
-		await initializationPromise;
-	}
+  // If pending and we have a promise, wait for it
+  if (initializationState === 'pending' && initializationPromise) {
+    await initializationPromise
+  }
 
-	// If not started, return immediately (nothing to wait for)
+  // If not started, return immediately (nothing to wait for)
 }
 
 /**
@@ -140,62 +143,68 @@ export async function waitForInitialization(): Promise<void> {
  * However, if initialization previously failed, calling again will retry.
  */
 export function initializeLspServerManager(): void {
-	// --bare / SIMPLE: no LSP. LSP is for editor integration (diagnostics,
-	// hover, go-to-def in the REPL). Scripted -p calls have no use for it.
-	if (isBareMode()) {
-		return;
-	}
-	logForDebugging("[LSP MANAGER] initializeLspServerManager() called");
+  // --bare / SIMPLE: no LSP. LSP is for editor integration (diagnostics,
+  // hover, go-to-def in the REPL). Scripted -p calls have no use for it.
+  if (isBareMode()) {
+    return
+  }
+  logForDebugging('[LSP MANAGER] initializeLspServerManager() called')
 
-	// Skip if already initialized or currently initializing
-	if (lspManagerInstance !== undefined && initializationState !== "failed") {
-		logForDebugging("[LSP MANAGER] Already initialized or initializing, skipping");
-		return;
-	}
+  // Skip if already initialized or currently initializing
+  if (lspManagerInstance !== undefined && initializationState !== 'failed') {
+    logForDebugging(
+      '[LSP MANAGER] Already initialized or initializing, skipping',
+    )
+    return
+  }
 
-	// Reset state for retry if previous initialization failed
-	if (initializationState === "failed") {
-		lspManagerInstance = undefined;
-		initializationError = undefined;
-	}
+  // Reset state for retry if previous initialization failed
+  if (initializationState === 'failed') {
+    lspManagerInstance = undefined
+    initializationError = undefined
+  }
 
-	// Create the manager instance and mark as pending
-	lspManagerInstance = createLSPServerManager();
-	initializationState = "pending";
-	logForDebugging("[LSP MANAGER] Created manager instance, state=pending");
+  // Create the manager instance and mark as pending
+  lspManagerInstance = createLSPServerManager()
+  initializationState = 'pending'
+  logForDebugging('[LSP MANAGER] Created manager instance, state=pending')
 
-	// Increment generation to invalidate any pending initializations
-	const currentGeneration = ++initializationGeneration;
-	logForDebugging(`[LSP MANAGER] Starting async initialization (generation ${currentGeneration})`);
+  // Increment generation to invalidate any pending initializations
+  const currentGeneration = ++initializationGeneration
+  logForDebugging(
+    `[LSP MANAGER] Starting async initialization (generation ${currentGeneration})`,
+  )
 
-	// Start initialization asynchronously without blocking
-	// Store the promise so callers can await it via waitForInitialization()
-	initializationPromise = lspManagerInstance
-		.initialize()
-		.then(() => {
-			// Only update state if this is still the current initialization
-			if (currentGeneration === initializationGeneration) {
-				initializationState = "success";
-				logForDebugging("LSP server manager initialized successfully");
+  // Start initialization asynchronously without blocking
+  // Store the promise so callers can await it via waitForInitialization()
+  initializationPromise = lspManagerInstance
+    .initialize()
+    .then(() => {
+      // Only update state if this is still the current initialization
+      if (currentGeneration === initializationGeneration) {
+        initializationState = 'success'
+        logForDebugging('LSP server manager initialized successfully')
 
-				// Register passive notification handlers for diagnostics
-				if (lspManagerInstance) {
-					registerLSPNotificationHandlers(lspManagerInstance);
-				}
-			}
-		})
-		.catch((error: unknown) => {
-			// Only update state if this is still the current initialization
-			if (currentGeneration === initializationGeneration) {
-				initializationState = "failed";
-				initializationError = error as Error;
-				// Clear the instance since it's not usable
-				lspManagerInstance = undefined;
+        // Register passive notification handlers for diagnostics
+        if (lspManagerInstance) {
+          registerLSPNotificationHandlers(lspManagerInstance)
+        }
+      }
+    })
+    .catch((error: unknown) => {
+      // Only update state if this is still the current initialization
+      if (currentGeneration === initializationGeneration) {
+        initializationState = 'failed'
+        initializationError = error as Error
+        // Clear the instance since it's not usable
+        lspManagerInstance = undefined
 
-				logError(error as Error);
-				logForDebugging(`Failed to initialize LSP server manager: ${errorMessage(error)}`);
-			}
-		});
+        logError(error as Error)
+        logForDebugging(
+          `Failed to initialize LSP server manager: ${errorMessage(error)}`,
+        )
+      }
+    })
 }
 
 /**
@@ -215,30 +224,32 @@ export function initializeLspServerManager(): void {
  * init: the generation counter invalidates the in-flight promise.
  */
 export function reinitializeLspServerManager(): void {
-	if (initializationState === "not-started") {
-		// initializeLspServerManager() was never called (e.g. headless subcommand
-		// path). Don't start it now.
-		return;
-	}
+  if (initializationState === 'not-started') {
+    // initializeLspServerManager() was never called (e.g. headless subcommand
+    // path). Don't start it now.
+    return
+  }
 
-	logForDebugging("[LSP MANAGER] reinitializeLspServerManager() called");
+  logForDebugging('[LSP MANAGER] reinitializeLspServerManager() called')
 
-	// Best-effort shutdown of any running servers on the old instance so
-	// /reload-plugins doesn't leak child processes. Fire-and-forget: the
-	// primary use case (issue #15521) has 0 servers so this is usually a no-op.
-	if (lspManagerInstance) {
-		void lspManagerInstance.shutdown().catch((err) => {
-			logForDebugging(`[LSP MANAGER] old instance shutdown during reinit failed: ${errorMessage(err)}`);
-		});
-	}
+  // Best-effort shutdown of any running servers on the old instance so
+  // /reload-plugins doesn't leak child processes. Fire-and-forget: the
+  // primary use case (issue #15521) has 0 servers so this is usually a no-op.
+  if (lspManagerInstance) {
+    void lspManagerInstance.shutdown().catch(err => {
+      logForDebugging(
+        `[LSP MANAGER] old instance shutdown during reinit failed: ${errorMessage(err)}`,
+      )
+    })
+  }
 
-	// Force the idempotence check in initializeLspServerManager() to fall
-	// through. Generation counter handles invalidating any in-flight init.
-	lspManagerInstance = undefined;
-	initializationState = "not-started";
-	initializationError = undefined;
+  // Force the idempotence check in initializeLspServerManager() to fall
+  // through. Generation counter handles invalidating any in-flight init.
+  lspManagerInstance = undefined
+  initializationState = 'not-started'
+  initializationError = undefined
 
-	initializeLspServerManager();
+  initializeLspServerManager()
 }
 
 /**
@@ -254,23 +265,25 @@ export function reinitializeLspServerManager(): void {
  * @returns Promise that resolves when shutdown completes (errors are swallowed)
  */
 export async function shutdownLspServerManager(): Promise<void> {
-	if (lspManagerInstance === undefined) {
-		return;
-	}
+  if (lspManagerInstance === undefined) {
+    return
+  }
 
-	try {
-		await lspManagerInstance.shutdown();
-		logForDebugging("LSP server manager shut down successfully");
-	} catch (error: unknown) {
-		logError(error as Error);
-		logForDebugging(`Failed to shutdown LSP server manager: ${errorMessage(error)}`);
-	} finally {
-		// Always clear state even if shutdown failed
-		lspManagerInstance = undefined;
-		initializationState = "not-started";
-		initializationError = undefined;
-		initializationPromise = undefined;
-		// Increment generation to invalidate any pending initializations
-		initializationGeneration++;
-	}
+  try {
+    await lspManagerInstance.shutdown()
+    logForDebugging('LSP server manager shut down successfully')
+  } catch (error: unknown) {
+    logError(error as Error)
+    logForDebugging(
+      `Failed to shutdown LSP server manager: ${errorMessage(error)}`,
+    )
+  } finally {
+    // Always clear state even if shutdown failed
+    lspManagerInstance = undefined
+    initializationState = 'not-started'
+    initializationError = undefined
+    initializationPromise = undefined
+    // Increment generation to invalidate any pending initializations
+    initializationGeneration++
+  }
 }

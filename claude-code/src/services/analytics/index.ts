@@ -16,7 +16,7 @@
  *
  * Usage: `myString as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS`
  */
-export type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS = never;
+export type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS = never
 
 /**
  * Marker type for values routed to PII-tagged proto columns via `_PROTO_*`
@@ -30,7 +30,7 @@ export type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS = never;
  *
  * Usage: `rawName as AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED`
  */
-export type AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED = never;
+export type AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED = never
 
 /**
  * Strip `_PROTO_*` keys from a payload destined for general-access storage.
@@ -42,41 +42,46 @@ export type AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED = never;
  *
  * Returns the input unchanged (same reference) when no _PROTO_ keys present.
  */
-export function stripProtoFields<V>(metadata: Record<string, V>): Record<string, V> {
-	let result: Record<string, V> | undefined;
-	for (const key in metadata) {
-		if (key.startsWith("_PROTO_")) {
-			if (result === undefined) {
-				result = { ...metadata };
-			}
-			delete result[key];
-		}
-	}
-	return result ?? metadata;
+export function stripProtoFields<V>(
+  metadata: Record<string, V>,
+): Record<string, V> {
+  let result: Record<string, V> | undefined
+  for (const key in metadata) {
+    if (key.startsWith('_PROTO_')) {
+      if (result === undefined) {
+        result = { ...metadata }
+      }
+      delete result[key]
+    }
+  }
+  return result ?? metadata
 }
 
 // Internal type for logEvent metadata - different from the enriched EventMetadata in metadata.ts
-type LogEventMetadata = { [key: string]: boolean | number | undefined };
+type LogEventMetadata = { [key: string]: boolean | number | undefined }
 
 type QueuedEvent = {
-	eventName: string;
-	metadata: LogEventMetadata;
-	async: boolean;
-};
+  eventName: string
+  metadata: LogEventMetadata
+  async: boolean
+}
 
 /**
  * Sink interface for the analytics backend
  */
 export type AnalyticsSink = {
-	logEvent: (eventName: string, metadata: LogEventMetadata) => void;
-	logEventAsync: (eventName: string, metadata: LogEventMetadata) => Promise<void>;
-};
+  logEvent: (eventName: string, metadata: LogEventMetadata) => void
+  logEventAsync: (
+    eventName: string,
+    metadata: LogEventMetadata,
+  ) => Promise<void>
+}
 
 // Event queue for events logged before sink is attached
-const eventQueue: QueuedEvent[] = [];
+const eventQueue: QueuedEvent[] = []
 
 // Sink - initialized during app startup
-let sink: AnalyticsSink | null = null;
+let sink: AnalyticsSink | null = null
 
 /**
  * Attach the analytics sink that will receive all events.
@@ -88,33 +93,33 @@ let sink: AnalyticsSink | null = null;
  * the default command) without coordination.
  */
 export function attachAnalyticsSink(newSink: AnalyticsSink): void {
-	if (sink !== null) {
-		return;
-	}
-	sink = newSink;
+  if (sink !== null) {
+    return
+  }
+  sink = newSink
 
-	// Drain the queue asynchronously to avoid blocking startup
-	if (eventQueue.length > 0) {
-		const queuedEvents = [...eventQueue];
-		eventQueue.length = 0;
+  // Drain the queue asynchronously to avoid blocking startup
+  if (eventQueue.length > 0) {
+    const queuedEvents = [...eventQueue]
+    eventQueue.length = 0
 
-		// Log queue size for ants to help debug analytics initialization timing
-		if (process.env.USER_TYPE === "ant") {
-			sink.logEvent("analytics_sink_attached", {
-				queued_event_count: queuedEvents.length,
-			});
-		}
+    // Log queue size for ants to help debug analytics initialization timing
+    if (process.env.USER_TYPE === 'ant') {
+      sink.logEvent('analytics_sink_attached', {
+        queued_event_count: queuedEvents.length,
+      })
+    }
 
-		queueMicrotask(() => {
-			for (const event of queuedEvents) {
-				if (event.async) {
-					void sink!.logEventAsync(event.eventName, event.metadata);
-				} else {
-					sink!.logEvent(event.eventName, event.metadata);
-				}
-			}
-		});
-	}
+    queueMicrotask(() => {
+      for (const event of queuedEvents) {
+        if (event.async) {
+          void sink!.logEventAsync(event.eventName, event.metadata)
+        } else {
+          sink!.logEvent(event.eventName, event.metadata)
+        }
+      }
+    })
+  }
 }
 
 /**
@@ -126,16 +131,16 @@ export function attachAnalyticsSink(newSink: AnalyticsSink): void {
  * If no sink is attached, events are queued and drained when the sink attaches.
  */
 export function logEvent(
-	eventName: string,
-	// intentionally no strings unless AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-	// to avoid accidentally logging code/filepaths
-	metadata: LogEventMetadata,
+  eventName: string,
+  // intentionally no strings unless AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  // to avoid accidentally logging code/filepaths
+  metadata: LogEventMetadata,
 ): void {
-	if (sink === null) {
-		eventQueue.push({ eventName, metadata, async: false });
-		return;
-	}
-	sink.logEvent(eventName, metadata);
+  if (sink === null) {
+    eventQueue.push({ eventName, metadata, async: false })
+    return
+  }
+  sink.logEvent(eventName, metadata)
 }
 
 /**
@@ -147,15 +152,15 @@ export function logEvent(
  * If no sink is attached, events are queued and drained when the sink attaches.
  */
 export async function logEventAsync(
-	eventName: string,
-	// intentionally no strings, to avoid accidentally logging code/filepaths
-	metadata: LogEventMetadata,
+  eventName: string,
+  // intentionally no strings, to avoid accidentally logging code/filepaths
+  metadata: LogEventMetadata,
 ): Promise<void> {
-	if (sink === null) {
-		eventQueue.push({ eventName, metadata, async: true });
-		return;
-	}
-	await sink.logEventAsync(eventName, metadata);
+  if (sink === null) {
+    eventQueue.push({ eventName, metadata, async: true })
+    return
+  }
+  await sink.logEventAsync(eventName, metadata)
 }
 
 /**
@@ -163,6 +168,6 @@ export async function logEventAsync(
  * @internal
  */
 export function _resetForTesting(): void {
-	sink = null;
-	eventQueue.length = 0;
+  sink = null
+  eventQueue.length = 0
 }

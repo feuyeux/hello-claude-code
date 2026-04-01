@@ -1,9 +1,9 @@
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
-import { useMemo } from "react";
-import type { Tools, ToolPermissionContext } from "../Tool.js";
-import { assembleToolPool } from "../tools.js";
-import { useAppState } from "../state/AppState.js";
-import { mergeAndFilterTools } from "../utils/toolPool.js";
+import { useMemo } from 'react'
+import type { Tools, ToolPermissionContext } from '../Tool.js'
+import { assembleToolPool } from '../tools.js'
+import { useAppState } from '../state/AppState.js'
+import { mergeAndFilterTools } from '../utils/toolPool.js'
 
 /**
  * React hook that assembles the full tool pool for the REPL.
@@ -18,17 +18,27 @@ import { mergeAndFilterTools } from "../utils/toolPool.js";
  * @param toolPermissionContext - Permission context for filtering
  */
 export function useMergedTools(
-	initialTools: Tools,
-	mcpTools: Tools,
-	toolPermissionContext: ToolPermissionContext,
+  initialTools: Tools,
+  mcpTools: Tools,
+  toolPermissionContext: ToolPermissionContext,
 ): Tools {
-	let replBridgeEnabled = false;
-	let replBridgeOutboundOnly = false;
-	return useMemo(() => {
-		// assembleToolPool is the shared function that both REPL and runAgent use.
-		// It handles: getTools() + MCP deny-rule filtering + dedup + MCP CLI exclusion.
-		const assembled = assembleToolPool(toolPermissionContext, mcpTools);
+  let replBridgeEnabled = false
+  let replBridgeOutboundOnly = false
+  return useMemo(() => {
+    // assembleToolPool is the shared function that both REPL and runAgent use.
+    // It handles: getTools() + MCP deny-rule filtering + dedup + MCP CLI exclusion.
+    const assembled = assembleToolPool(toolPermissionContext, mcpTools)
 
-		return mergeAndFilterTools(initialTools, assembled, toolPermissionContext.mode);
-	}, [initialTools, mcpTools, toolPermissionContext, replBridgeEnabled, replBridgeOutboundOnly]);
+    return mergeAndFilterTools(
+      initialTools,
+      assembled,
+      toolPermissionContext.mode,
+    )
+  }, [
+    initialTools,
+    mcpTools,
+    toolPermissionContext,
+    replBridgeEnabled,
+    replBridgeOutboundOnly,
+  ])
 }

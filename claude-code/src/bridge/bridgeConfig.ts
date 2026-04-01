@@ -11,17 +11,24 @@
  * using IPC auth) use the Override getters directly.
  */
 
-import { getOauthConfig } from "../constants/oauth.js";
-import { getClaudeAIOAuthTokens } from "../utils/auth.js";
+import { getOauthConfig } from '../constants/oauth.js'
+import { getClaudeAIOAuthTokens } from '../utils/auth.js'
 
 /** Ant-only dev override: CLAUDE_BRIDGE_OAUTH_TOKEN, else undefined. */
 export function getBridgeTokenOverride(): string | undefined {
-	return (process.env.USER_TYPE === "ant" && process.env.CLAUDE_BRIDGE_OAUTH_TOKEN) || undefined;
+  return (
+    (process.env.USER_TYPE === 'ant' &&
+      process.env.CLAUDE_BRIDGE_OAUTH_TOKEN) ||
+    undefined
+  )
 }
 
 /** Ant-only dev override: CLAUDE_BRIDGE_BASE_URL, else undefined. */
 export function getBridgeBaseUrlOverride(): string | undefined {
-	return (process.env.USER_TYPE === "ant" && process.env.CLAUDE_BRIDGE_BASE_URL) || undefined;
+  return (
+    (process.env.USER_TYPE === 'ant' && process.env.CLAUDE_BRIDGE_BASE_URL) ||
+    undefined
+  )
 }
 
 /**
@@ -29,7 +36,7 @@ export function getBridgeBaseUrlOverride(): string | undefined {
  * keychain. Undefined means "not logged in".
  */
 export function getBridgeAccessToken(): string | undefined {
-	return getBridgeTokenOverride() ?? getClaudeAIOAuthTokens()?.accessToken;
+  return getBridgeTokenOverride() ?? getClaudeAIOAuthTokens()?.accessToken
 }
 
 /**
@@ -37,5 +44,5 @@ export function getBridgeAccessToken(): string | undefined {
  * OAuth config. Always returns a URL.
  */
 export function getBridgeBaseUrl(): string {
-	return getBridgeBaseUrlOverride() ?? getOauthConfig().BASE_API_URL;
+  return getBridgeBaseUrlOverride() ?? getOauthConfig().BASE_API_URL
 }

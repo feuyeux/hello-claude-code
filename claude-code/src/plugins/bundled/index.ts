@@ -18,6 +18,6 @@
  * Initialize built-in plugins. Called during CLI startup.
  */
 export function initBuiltinPlugins(): void {
-	// No built-in plugins registered yet — this is the scaffolding for
-	// migrating bundled skills that should be user-toggleable.
+  // No built-in plugins registered yet — this is the scaffolding for
+  // migrating bundled skills that should be user-toggleable.
 }

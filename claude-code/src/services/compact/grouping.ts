@@ -1,4 +1,4 @@
-import type { Message } from "../../types/message.js";
+import type { Message } from '../../types/message.js'
 
 /**
  * Groups messages at API-round boundaries: one group per API round-trip.
@@ -20,40 +20,44 @@ import type { Message } from "../../types/message.js";
  * a latent ws CJS/ESM resolution race in CI shard-2.
  */
 export function groupMessagesByApiRound(messages: Message[]): Message[][] {
-	const groups: Message[][] = [];
-	let current: Message[] = [];
-	// message.id of the most recently seen assistant. This is the sole
-	// boundary gate: streaming chunks from the same API response share an
-	// id, so boundaries only fire at the start of a genuinely new round.
-	// normalizeMessages yields one AssistantMessage per content block, and
-	// StreamingToolExecutor interleaves tool_results between chunks live
-	// (yield order, not concat order — see query.ts:613). The id check
-	// correctly keeps `[tu_A(id=X), result_A, tu_B(id=X)]` in one group.
-	let lastAssistantId: string | undefined;
+  const groups: Message[][] = []
+  let current: Message[] = []
+  // message.id of the most recently seen assistant. This is the sole
+  // boundary gate: streaming chunks from the same API response share an
+  // id, so boundaries only fire at the start of a genuinely new round.
+  // normalizeMessages yields one AssistantMessage per content block, and
+  // StreamingToolExecutor interleaves tool_results between chunks live
+  // (yield order, not concat order — see query.ts:613). The id check
+  // correctly keeps `[tu_A(id=X), result_A, tu_B(id=X)]` in one group.
+  let lastAssistantId: string | undefined
 
-	// In a well-formed conversation the API contract guarantees every
-	// tool_use is resolved before the next assistant turn, so lastAssistantId
-	// alone is a sufficient boundary gate. Tracking unresolved tool_use IDs
-	// would only do work when the conversation is malformed (dangling tool_use
-	// after resume-from-partial-batch or max_tokens truncation) — and in that
-	// case it pins the gate shut forever, merging all subsequent rounds into
-	// one group. We let those boundaries fire; the summarizer fork's own
-	// ensureToolResultPairing at claude.ts:1136 repairs the dangling tu at
-	// API time.
-	for (const msg of messages) {
-		if (msg.type === "assistant" && msg.message.id !== lastAssistantId && current.length > 0) {
-			groups.push(current);
-			current = [msg];
-		} else {
-			current.push(msg);
-		}
-		if (msg.type === "assistant") {
-			lastAssistantId = msg.message.id;
-		}
-	}
+  // In a well-formed conversation the API contract guarantees every
+  // tool_use is resolved before the next assistant turn, so lastAssistantId
+  // alone is a sufficient boundary gate. Tracking unresolved tool_use IDs
+  // would only do work when the conversation is malformed (dangling tool_use
+  // after resume-from-partial-batch or max_tokens truncation) — and in that
+  // case it pins the gate shut forever, merging all subsequent rounds into
+  // one group. We let those boundaries fire; the summarizer fork's own
+  // ensureToolResultPairing at claude.ts:1136 repairs the dangling tu at
+  // API time.
+  for (const msg of messages) {
+    if (
+      msg.type === 'assistant' &&
+      msg.message.id !== lastAssistantId &&
+      current.length > 0
+    ) {
+      groups.push(current)
+      current = [msg]
+    } else {
+      current.push(msg)
+    }
+    if (msg.type === 'assistant') {
+      lastAssistantId = msg.message.id
+    }
+  }
 
-	if (current.length > 0) {
-		groups.push(current);
-	}
-	return groups;
+  if (current.length > 0) {
+    groups.push(current)
+  }
+  return groups
 }

@@ -1,4 +1,4 @@
-import { isEnvTruthy } from "./envUtils.js";
+import { isEnvTruthy } from './envUtils.js'
 
 /**
  * Whether this build has bfs/ugrep embedded in the bun binary (ant-native only).
@@ -13,9 +13,11 @@ import { isEnvTruthy } from "./envUtils.js";
  * Set as a build-time define in scripts/build-with-plugins.ts for ant-native builds.
  */
 export function hasEmbeddedSearchTools(): boolean {
-	if (!isEnvTruthy(process.env.EMBEDDED_SEARCH_TOOLS)) return false;
-	const e = process.env.CLAUDE_CODE_ENTRYPOINT;
-	return e !== "sdk-ts" && e !== "sdk-py" && e !== "sdk-cli" && e !== "local-agent";
+  if (!isEnvTruthy(process.env.EMBEDDED_SEARCH_TOOLS)) return false
+  const e = process.env.CLAUDE_CODE_ENTRYPOINT
+  return (
+    e !== 'sdk-ts' && e !== 'sdk-py' && e !== 'sdk-cli' && e !== 'local-agent'
+  )
 }
 
 /**
@@ -23,5 +25,5 @@ export function hasEmbeddedSearchTools(): boolean {
  * Only meaningful when hasEmbeddedSearchTools() is true.
  */
 export function embeddedSearchToolsBinaryPath(): string {
-	return process.execPath;
+  return process.execPath
 }
