@@ -1,7 +1,5 @@
 # Claude Code Best V1 (CCB)
 
-> from https://github.com/claude-code-best/claude-code
-
 Anthropic 官方 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 工具的源码反编译/逆向还原项目。目标是将 Claude Code 大部分功能及工程化能力复现。虽然很难绷, 但是它叫做 CCB(踩踩背)...
 
 > V1 会完成跑通及基本的类型检查通过; 

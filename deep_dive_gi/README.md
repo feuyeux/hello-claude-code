@@ -16,6 +16,13 @@
 | [08_ui_rendering.md](./08_ui_rendering.md) | **UI 与输出渲染**：Ink/React 组件、消息渲染、权限 UI |
 | [09_hooks_system.md](./09_hooks_system.md) | **Hooks 钩子系统**：pre/post tool use hooks、settings 配置 |
 | [10_context_compaction.md](./10_context_compaction.md) | **上下文管理与压缩**：多级压缩、token 追踪、context 治理 |
+| [11_slash_commands_dispatch_system.md](./11_slash_commands_dispatch_system.md) | **Slash Commands 调度系统**：命令分类、动态加载、可用性校验 |
+| [12_terminal_tui_ink_deep_dive.md](./12_terminal_tui_ink_deep_dive.md) | **终端 TUI 与 Ink 底层交互**：虚拟滚动、输入拦截、FPS 管理 |
+| [13_file_edit_tool_and_diff_engine.md](./13_file_edit_tool_and_diff_engine.md) | **文件编辑工具与 Diff 引擎**：引号标准化、原子操作、高性能原生 Diff |
+| [14_project_onboarding_and_memory.md](./14_project_onboarding_and_memory.md) | **项目感知与记忆系统**：多层级指令加载、条件规则路由、@include 嵌套 |
+| [15_sandbox_and_security_isolation.md](./15_sandbox_and_security_isolation.md) | **沙盒与安全隔离机制**：容器沙盒、读写边界防御、Git 裸仓库逃逸拦截 |
+| [16_agent_swarms_and_tasks.md](./16_agent_swarms_and_tasks.md) | **子代理与任务协同系统**：前后台任务架构、进度追踪、代理上下文隔离 |
+| [17_file_history_and_rewind.md](./17_file_history_and_rewind.md) | **文件历史与回滚机制**：写前原子备份、状态追踪、一键撤销与快照提交 |
 
 ## 核心观点
 

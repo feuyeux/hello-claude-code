@@ -1,56 +1,85 @@
-# 10. 上下文管理与压缩系统分析
+# 10. 上下文管理与多级压缩系统深度解析
 
-在长周期的工程开发任务中，Token 上下文窗口是极其宝贵的资源。`claude-code` 设计了一套高度复杂的上下文压缩（Compaction）系统，确保在不丢失关键记忆的前提下，实现对话的无限延续。
+在处理复杂工程任务时，LLM 的上下文窗口（Context Window）是核心约束。`claude-code` 实现了一套高度精密的多级压缩（Compaction）管线，旨在平衡“记忆完整性”与“Token 效率”。本章将从代码实现视角深度拆解这一系统的运行机制。
 
-## 10.1. 压缩管线概览
+## 10.1. 压缩管线全景图
 
-系统在每次请求发送前，都会按照以下顺序运行压缩管线：
+当用户提交一个消息时，系统在发送 API 请求前会依次经过以下六个压缩阶段。这些阶段的设计原则是：从“无损/低损”到“有损”，从“物理裁减”到“语义摘要”。
 
 ```mermaid
 flowchart TD
-    A["Raw Messages"] --> B["Tool Result Budgeting"]
-    B --> C["Snip Compaction"]
-    C --> D["Context Collapse"]
-    D --> E["Auto Compact Check"]
-    E -->|"Threshold Reached"| F["LLM Summarization"]
-    E -->|"Safe"| G["Final Prompt"]
-    F --> G
+    A["Raw Messages"] --> B["1. Tool Result Budgeting"]
+    B --> C["2. Snip Compaction (可选)"]
+    C --> D["3. Microcompact (Time/Cache-based)"]
+    D --> E["4. Context Collapse (可选)"]
+    E --> F["5. Autocompact Check"]
+    F -->|"超过阈值"| G["LLM Semantic Summary"]
+    F -->|"安全"| H["Final Prompt"]
+    G --> H
+    H --> I["API Request"]
+    I -->|"413 Prompt Too Long"| J["6. Reactive Compact"]
+    J --> H
 ```
 
-## 10.2. 核心压缩技术
+## 10.2. 六大压缩阶段详解
 
-### 10.2.1. 物理切片 (Snip Compaction)
-- **策略**：当消息数量超过阈值时，保留最重要的 System Prompt 和最新的 $N$ 条消息，将中间的过时交互直接切除。
-- **优点**：计算成本为零，简单有效。
+### 1. 工具结果预算 (Tool Result Budgeting)
+- **实现位置**：`src/query.ts` 中的 `applyToolResultBudget` 函数。
+- **机制**：在执行 `shell`、`grep` 或 `read_file` 等工具时，如果输出内容超过预设阈值（如 `shell` 为 100k 字符，`read_file` 为 50k），系统会立即将其截断并替换为 `[Content truncated...]` 标记。
+- **目的**：防止单次工具输出直接撑爆上下文。
 
-### 10.2.2. 上下文折叠 (Context Collapse)
-- **策略**：将消息中包含的大段非结构化数据（如 `Read` 工具读取的代码、`Grep` 的搜索结果）替换为缩略引用或元数据标签。
-- **效果**：极大地减少了冗余 Token，同时 AI 仍然知道这些操作曾经发生过，并可以通过引用再次获取详细信息。
+### 2. 物理裁剪 (Snip Compaction)
+- **实现位置**：`src/services/compact/snipCompact.ts`。
+- **触发条件**：受 `HISTORY_SNIP` 特性开关控制。
+- **策略**：直接从物理层面删除历史消息。通常保留 System Prompt（头部）和最新的 $N$ 条交互（尾部），将中间的部分直接“切除”。
+- **优势**：计算成本几乎为零，且 `snipTokensFreed` 会反馈给后续的 Autocompact 逻辑，避免重复压缩。
 
-### 10.2.3. 自动摘要压缩 (Auto Compact)
-这是系统最具智能的部分（见 `src/services/compact/autoCompact.ts`）：
-- **触发机制**：当预估 Token 占用达到模型窗口的 ~90% 时触发。
-- **实现原理**：启动一个高性能的小模型（如 Claude 3 Haiku）作为背景任务，对需要压缩的历史进行“语义摘要”，将数十轮的对话浓缩为一段关键信息。
-- **熔断机制**：如果自动压缩连续失败 3 次，系统会停止尝试，转而提示用户手动清理或重新开启会话。
+### 3. 微压缩 (Microcompact)
+- **实现位置**：`src/services/compact/microCompact.ts`。
+- **策略 A (Time-based)**：如果距离最后一次对话已超过 60 分钟（缓存已失效），则主动清空旧的工具执行结果（替换为 `[Old tool result content cleared]`），以减小下次 prefix-rewrite 的压力。
+- **策略 B (Cached - 蚂蚁金服内部专用)**：利用 **Cache Editing API**。在不改变客户端消息历史的前提下，直接在服务端缓存中删除特定的 `tool_result` 块。这实现了真正的“无感无损”压缩。
 
-### 10.2.4. 响应式抢救 (Reactive Compact)
-- **应用场景**：处理模型预测误差导致的“Prompt Too Long” 413 错误。
-- **自愈过程**：系统捕获错误后，立即在后台执行一次深度压缩，然后自动重试之前的请求。这对用户来说几乎是无感的。
+### 4. 上下文折叠 (Context Collapse)
+- **实现位置**：`src/services/contextCollapse/`。
+- **核心逻辑**：将大段结构化数据（如读取的文件内容）移动到侧边存储，在主上下文中仅保留一个摘要引用。AI 仍知道文件内容存在，但在需要时才通过引用重新拉取。
 
-## 10.3. 关键性能指标
+### 5. 自动语义摘要 (Autocompact)
+这是最关键的有损压缩阶段。
+- **实现位置**：`src/services/compact/autoCompact.ts`。
+- **触发阈值算法**：
+  - `EffectiveWindow = ModelContextWindow - 20,000 (Summary Buffer)`
+  - `Threshold = EffectiveWindow - 13,000 (Safety Buffer)`
+- **逻辑流**：
+  1. 预估当前 Token 总量（使用 4/3 膨胀系数进行保守估算）。
+  2. 若超过阈值，启动 Forked Agent（后台进程）。
+  3. 调用 LLM 将需要压缩的历史通过 `getCompactPrompt` 指令归纳为一段“连续的叙事摘要”。
+  4. 生成 `CompactBoundary` 标记，替换掉旧消息，作为新的“记忆锚点”。
 
-| 指标名称 | 默认阈值 | 说明 |
+### 6. 响应式抢救 (Reactive Compact)
+- **实现位置**：`src/services/compact/reactiveCompact.ts`。
+- **触发场景**：API 返回 `413 Prompt Too Long` 错误（通常是因为模型预测的 Token 数与实际计算有偏差）。
+- **策略**：捕获异常后，立即执行一次更激进的 `truncateHeadForPTLRetry`（通常丢弃最旧的 20% 消息组），然后自动重试，确保用户任务不中断。
+
+## 10.3. Token 预算与追踪模型
+
+系统通过 `src/utils/tokens.ts` 维护了一套精密且保守的 Token 估算模型：
+
+| 关键参数 | 数值/公式 | 说明 |
 | :--- | :--- | :--- |
-| `AUTOCOMPACT_BUFFER` | 13,000 Tokens | 触发自动压缩的提前量。 |
-| `MAX_OUTPUT_TOKENS` | 20,000 Tokens | 为摘要生成预留的输出空间。 |
-| `BLOCKING_LIMIT` | 窗口边缘 | 强制拦截用户输入，要求必须压缩才能继续。 |
+| **估算系数** | `ceil(chars * 4/3)` | 当没有 API 精确统计时，采用 4/3 膨胀系数以确保不溢出。 |
+| **Circuit Breaker** | 3 次尝试 | 自动压缩连续失败 3 次后熔断，防止无限消耗 API 额度。 |
+| **Blocking Limit** | `EffectiveWindow - 3k` | 强制拦截。当极其接近窗口上限时，禁止用户输入，必须手动 `/compact`。 |
+| **Output Reserve** | 20,000 Tokens | 始终为 LLM 的输出保留足够空间，避免在生成结果时被截断。 |
 
-## 10.4. 代码实现位置
+## 10.4. 代码流分析：如何保持记忆？
 
-- `src/services/compact/compact.ts`: 摘要生成的 Prompt 模板与逻辑。
-- `src/services/compact/snipCompact.ts`: 实现“掐头去尾”的物理过滤。
-- `src/services/contextCollapse/`: 负责文件内容的折叠与元数据映射。
-- `src/utils/tokens.ts`: 提供基于流式输出的高精度 Token 估算算法。
+在 `src/services/compact/compact.ts` 中，`buildPostCompactMessages` 确保了压缩后的上下文结构：
+
+1. **Compact Boundary**：一个特殊的系统消息，包含元数据（如压缩前的 Token 数、被压缩掉的消息 UUID 范围）。
+2. **Summary Messages**：由 LLM 生成的语义摘要，作为后续对话的背景知识。
+3. **Restored Files**：系统会自动恢复最近修改的 $N$ 个文件内容到上下文中（`POST_COMPACT_MAX_FILES_TO_RESTORE = 5`），确保开发者正在进行的工作不会因为压缩而丢失细节。
+4. **Skill Attachments**：保留已发现的技能和指令。
 
 ## 10.5. 总结
-上下文管理系统是 `claude-code` 的“记忆过滤器”。它通过物理裁剪、语义折叠和 AI 摘要的组合拳，解决了大语言模型“健忘”和“窗口焦虑”的问题，是实现长序列任务处理（如大规模代码重构）的基石。
+
+`claude-code` 的上下文压缩系统不是简单的“过期删除”，而是一个**动态的生命周期管理系统**。它通过物理、微观、语义和响应式四个维度的层层过滤，使得 AI 能够胜任长达数天、涉及数千次交互的超级长序列任务，是其工业级生产力的基石。
