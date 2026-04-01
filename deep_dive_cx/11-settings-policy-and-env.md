@@ -232,7 +232,11 @@
 ## 11. 一张总图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A["CLI flags / disk / policy / plugin"] --> B[eagerLoadSettings]
     B --> C[loadSettingsFromDisk]
     C --> D[user + project + local + flag deep merge]

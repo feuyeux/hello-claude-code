@@ -333,23 +333,27 @@
 ## 18. 一张总图
 
 ```mermaid
-flowchart TB
-    A[query()] --> B[claude.ts paramsFromContext]
+---
+config:
+  theme: neutral
+---
+flowchart LR
+    A["query()"] --> B["claude.ts paramsFromContext"]
     B --> C[getAnthropicClient]
     C --> D{provider}
-    D -- first-party --> E[Anthropic]
-    D -- bedrock --> F[AnthropicBedrock]
-    D -- foundry --> G[AnthropicFoundry]
-    D -- vertex --> H[AnthropicVertex]
+    D -->|first-party| E[Anthropic]
+    D -->|bedrock| F[AnthropicBedrock]
+    D -->|foundry| G[AnthropicFoundry]
+    D -->|vertex| H[AnthropicVertex]
     E --> I[withRetry]
     F --> I
     G --> I
     H --> I
-    I --> J[beta.messages.create(...).withResponse]
+    I --> J["beta.messages.create(...).withResponse"]
     J --> K{error?}
-    K -- no --> L[stream to query loop]
-    K -- yes --> M[retry / fallback / cooldown / auth refresh]
-    M --> N[errors.ts -> assistant API error message]
+    K -->|no| L[stream to query loop]
+    K -->|yes| M["retry / fallback / cooldown / auth refresh"]
+    M --> N["errors.ts -> assistant API error message"]
 ```
 
 ## 19. 关键源码锚点

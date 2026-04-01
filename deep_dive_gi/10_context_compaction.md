@@ -7,6 +7,10 @@
 当用户提交一个消息时，系统在发送 API 请求前会依次经过以下六个压缩阶段。这些阶段的设计原则是：从“无损/低损”到“有损”，从“物理裁减”到“语义摘要”。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TD
     A["Raw Messages"] --> B["1. Tool Result Budgeting"]
     B --> C["2. Snip Compaction (可选)"]

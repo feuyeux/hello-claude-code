@@ -22,6 +22,10 @@
 下图展示“**从用户输入到终端渲染**”的调用链；这一视角与后文 `queryLoop()` 的内部状态机不同。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart LR
     A["User Input<br/>用户输入<br/>REPL.onSubmit"] --> B["Message Parse<br/>消息解析<br/>handlePromptSubmit / processUserInput"]
     B --> C["Context Assembly<br/>上下文组装<br/>onQueryImpl -> query() -> queryLoop"]
@@ -30,11 +34,7 @@ flowchart LR
     E --> F["Permission Check<br/>权限校验<br/>runToolUse -> checkPermissionsAndCallTool"]
     F --> G["Tool Execute<br/>工具执行<br/>StreamingToolExecutor / runTools / tool.call"]
     G --> H["Ink Render<br/>终端渲染<br/>REPL state -> Messages -> Ink"]
-
     G -. "tool_result 回写<br/>Multi-turn 多轮" .-> D
-
-    classDef stage fill:#E38A64,stroke:#9E4B35,color:#ffffff,stroke-width:2px;
-    class A,B,C,D,E,F,G,H stage;
 ```
 
 补充说明如下：
@@ -45,7 +45,11 @@ flowchart LR
 ### 2.2 `query()` 内部状态机图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A["query(params)"] --> B[queryLoop]
     B --> C[截取 compact boundary 后消息]
     C --> D[tool result budget]

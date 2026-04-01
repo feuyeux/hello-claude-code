@@ -59,6 +59,10 @@ src/
 ## 3. 架构层次图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph CLI["CLI 入口层"]
         A1["main.tsx, init.ts, ink.ts<br/>React Ink UI"]
@@ -301,6 +305,10 @@ export type AppState = DeepImmutable<{
 ## 5. 模块依赖图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["main.tsx"] --> B["init.ts"]
     B --> C["ink.ts React"]

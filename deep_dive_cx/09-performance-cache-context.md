@@ -137,6 +137,10 @@
 ## 4.1 梯度图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart LR
     A[原始 messages] --> B[tool result budget]
     B --> C[snip]

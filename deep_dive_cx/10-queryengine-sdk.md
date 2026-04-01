@@ -281,7 +281,11 @@ headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”
 ## 16. 非交互路径总体图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A[SDK / print 调用] --> B[QueryEngine.submitMessage]
     B --> C[fetchSystemPromptParts]
     B --> D[processUserInput]

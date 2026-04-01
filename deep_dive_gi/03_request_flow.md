@@ -16,6 +16,10 @@
 ### 3.2.1 状态机视图 (Mermaid)
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 stateDiagram-v2
     [*] --> ContextManagement: 用户输入完成
     

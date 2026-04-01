@@ -307,6 +307,10 @@ async (tool, input, toolUseContext, assistantMessage, toolUseID, forceDecision?)
 ## 11. 权限与工具执行的完整图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart LR
     A[assistant tool_use] --> B[runToolUse]
     B --> C[按名称解析 Tool]

@@ -72,6 +72,10 @@ export function runWithAgentContext<T>(context: AgentContext, fn: () => T): T {
 ### 任务生命周期序列图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Main as Main Agent (Coordinator)
     participant Task as LocalAgentTask (Background)

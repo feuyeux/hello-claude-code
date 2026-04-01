@@ -5,6 +5,10 @@
 ## 1. 总体时序图
 
 ```mermaid
+---
+config:
+  theme: 'neutral'
+---
 sequenceDiagram
     participant P as 进程启动
     participant M as main.tsx

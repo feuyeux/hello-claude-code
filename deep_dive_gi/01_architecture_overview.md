@@ -7,6 +7,10 @@
 `claude-code` 采用了分层架构设计，将用户界面、业务逻辑编排、AI 核心引擎和底层基础设施清晰地解耦。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 graph TD
     subgraph "Entry Layer (入口层)"
         CLI["entrypoints/cli.tsx<br/>(命令行引导)"]
@@ -84,6 +88,10 @@ graph TD
 以下是用户在终端输入 prompt 后的处理全过程：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant User as 用户 (Terminal)
     participant REPL as REPL.tsx (Ink)

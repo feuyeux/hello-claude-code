@@ -5,6 +5,10 @@
 传输系统负责 Claude Code 与后端服务之间的通信，支持多种传输协议。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Interface["Transport 接口"]
         A1["connect()"]
@@ -62,6 +66,10 @@ export interface Transport {
 ### 3.1 基本实现
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["connect()"] --> B["刷新 Headers"]
     B --> C["创建 WebSocket"]
@@ -105,6 +113,10 @@ private handleReconnect(): void {
 ### 4.1 SSE 客户端实现
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["connect()"] --> B["创建 AbortController"]
     B --> C["fetch SSE 端点"]
@@ -129,6 +141,10 @@ flowchart TB
 ### 5.1 设计原理
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Write["写入流程"]
         A1["write(stream_event)"] --> A2["加入缓冲"]
@@ -212,6 +228,10 @@ export class HybridTransport extends WebSocketTransport {
 ### 6.1 核心功能
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Enqueue["入队"]
         A1["enqueue(items)"] --> A2{"队列满?"}
@@ -269,6 +289,10 @@ private async sendWithRetry(batch: T[]): Promise<void> {
 CCR (Cloud Code Runtime) 是远程执行协议：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant CCR as CCRClient
     participant Transport as Transport
@@ -318,6 +342,10 @@ export class WorkerStateUploader {
 **位置**: `src/cli/transports/transportUtils.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["createTransport(type, url, params)"] --> B{"type?"}
 
@@ -347,6 +375,10 @@ enum TransportErrorType {
 ### 10.2 恢复策略
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["传输错误"] --> B{"错误类型?"}
 

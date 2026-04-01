@@ -70,6 +70,10 @@
 ## 2.5. 启动流程数据流图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant OS as 操作系统/Shell
     participant CLI as cli.tsx (Bootstrap)

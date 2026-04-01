@@ -5,6 +5,10 @@
 MCP (Model Context Protocol) 是一种标准化协议，允许 Claude Code 与外部服务（如数据库、API、工具）进行交互。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph ClaudeCode["Claude Code"]
         A1["MCPClient"]
@@ -64,6 +68,10 @@ export interface MCPServerConnection {
 ### 2.2 MCP 客户端实现
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Client as MCPClient
     participant Transport as McpTransport
@@ -87,6 +95,10 @@ sequenceDiagram
 **位置**: `src/services/mcp/InProcessTransport.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Stdio["StdioTransport"]
         A1["spawn process"]
@@ -116,6 +128,10 @@ flowchart TB
 ### 3.2 HTTP 传输 (SSE)
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["connect()"] --> B["fetch SSE 端点"]
     B --> C["读取 ReadableStream"]
@@ -136,6 +152,10 @@ flowchart TB
 ### 4.1 工具转换为 Claude Tools
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["MCP 服务器"] --> B["listTools()"]
 
@@ -196,6 +216,10 @@ export interface ResourceContent {
 ### 5.2 资源工具
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph List["ListMcpResources"]
         A1["遍历 mcpClients"]
@@ -217,6 +241,10 @@ flowchart TB
 **位置**: `src/services/mcp/config.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["mcp.json"] --> B["MCPConfig"]
 
@@ -255,6 +283,10 @@ export function loadMCPConfig(): MCPConfig {
 ### 7.1 权限检查
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["资源访问请求"] --> B["findMCPResource()"]
 
@@ -286,6 +318,10 @@ export type MCPConnectionState =
 ### 8.2 状态更新
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["updateMCPClientState()"] --> B["setAppState()"]
 
@@ -301,6 +337,10 @@ flowchart TB
 ### 9.1 启动流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["startMCPClients()"] --> B["loadMcpConfig()"]
 
@@ -324,6 +364,10 @@ flowchart TB
 ### 9.2 关闭流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Stop as stopMCPClients()
     participant Client as MCPClient
@@ -356,6 +400,10 @@ export interface MCPPrompt {
 ### 10.2 提示工具
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["MCPPromptsTool.call()"] --> B{"server 参数?"}
 

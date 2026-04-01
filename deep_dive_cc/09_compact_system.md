@@ -5,6 +5,10 @@
 Claude Code 实现了多层次的上下文压缩系统，以管理对话历史带来的令牌消耗。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["消息令牌数"] --> B{超过阈值?}
 
@@ -32,6 +36,10 @@ flowchart TB
 Snip 通过分析消息内容，移除对当前对话贡献最小的消息：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["snipCompactIfNeeded()"] --> B{"token > 阈值?"}
 
@@ -74,6 +82,10 @@ function identifyLowValueMessages(messages: Message[]): ScoredMessage[] {
 Microcompact 合并连续的工具调用和结果，生成简洁的摘要：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["microcompact()"] --> B["identifyMergeableGroups()"]
 
@@ -124,6 +136,10 @@ async function summarizeToolSequence(
 ### 4.1 触发条件
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["shouldAutoCompact()"] --> B{"token > 阈值?"}
 
@@ -140,6 +156,10 @@ flowchart TB
 ### 4.2 压缩执行
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant QE as QueryEngine
     participant Compact as Autocompact
@@ -163,6 +183,10 @@ sequenceDiagram
 Context Collapse 通过选择性折叠次要消息来管理上下文：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Stage["阶段折叠"]
         A1["stageCollapse()"]
@@ -186,6 +210,10 @@ flowchart TB
 ### 5.2 恢复折叠
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["recoverFromOverflow()"] --> B{"遍历消息"}
 
@@ -210,6 +238,10 @@ flowchart TB
 **位置**: `src/services/api/promptCacheBreakDetection.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["detectCacheBreak()"] --> B{"有 cache_read_input_tokens?"}
 
@@ -225,6 +257,10 @@ flowchart TB
 ### 6.2 缓存感知压缩
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["cacheAwareCompact()"] --> B["过滤缓存贡献消息"]
 
@@ -245,6 +281,10 @@ flowchart TB
 ### 7.1 配置参数
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Config["CompactConfig"]
         A1["snip"]
@@ -270,6 +310,10 @@ flowchart TB
 ### 8.1 事件跟踪
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Compact as Autocompact
     participant Logger as Analytics

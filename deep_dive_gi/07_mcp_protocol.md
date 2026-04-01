@@ -7,6 +7,10 @@ Model Context Protocol (MCP) 是 `claude-code` 实现生态扩展和动态能力
 `claude-code` 作为一个全功能的 MCP Host，采用了高度模块化的多层代理架构：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TD
     subgraph "Claude-Code Core"
         A["QueryEngine"] --> B["Tool Registry"]

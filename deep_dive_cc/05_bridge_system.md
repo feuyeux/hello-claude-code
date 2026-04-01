@@ -5,6 +5,10 @@
 桥接系统使 Claude Code 能够通过远程客户端（如移动端 Web 应用）进行控制，实现远程会话功能。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Local["本地 CLI"]
         A1["REPL<br/>本地命令行"]
@@ -41,6 +45,10 @@ flowchart TB
 ### 2.1 EnvLessBridge 初始化流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant CLI as Claude Code CLI
     participant API as Session API
@@ -103,6 +111,10 @@ async function fetchRemoteCredentials(
 混合传输：WebSocket 用于读取，HTTP POST 用于写入。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["write(stream_event)"] --> B["缓冲队列<br/>100ms 定时器"]
     A1["write(other)"] --> C["立即 flush"]
@@ -163,6 +175,10 @@ export class SerialBatchEventUploader<T> {
 **位置**: `src/bridge/bridgeMessaging.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["SSE/WebSocket 消息"] --> B{"消息类型?"}
 
@@ -221,6 +237,10 @@ export async function handleServerControlRequest(
 **位置**: `src/bridge/jwtUtils.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Scheduler as TokenRefreshScheduler
     participant Auth as Auth Server
@@ -279,6 +299,10 @@ async function recoverFromAuthFailure(): Promise<void> {
 ### 6.1 重建流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["JWT 刷新/401 错误"] --> B["flushGate.start()"]
 
@@ -347,6 +371,10 @@ export type BridgeState =
 ### 7.2 状态转换
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 stateDiagram-v2
     [*] --> idle: 启动
     idle --> ready: createCodeSession

@@ -24,7 +24,11 @@
 ## 2. 整体流程图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A[REPL.onSubmit] --> B[handlePromptSubmit]
     B --> C{当前是否已有活跃 query?}
     C -- 是 --> D[入队 / 尝试打断 / 排队提示]

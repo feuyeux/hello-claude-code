@@ -263,7 +263,11 @@ session file 的创建时机非常克制：
 ## 12. 一张总图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A[insertMessageChain / appendEntry] --> B[append-only JSONL]
     B --> C[metadata entries + snapshots + sidechains]
     C --> D[loadTranscriptFile]

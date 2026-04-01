@@ -5,6 +5,10 @@
 Hooks 系统允许用户在关键生命周期点注入自定义逻辑，实现扩展和定制。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Pre["Pre-Tools Hooks"]
         A1["PreToolUse"]
@@ -43,6 +47,10 @@ flowchart TB
 ### 2.1 核心 Hook 类型
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart LR
     subgraph HookConfig["HookConfig"]
         A1["name"]
@@ -95,6 +103,10 @@ export type HookPhase =
 ### 3.1 Hook 配置格式
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["hooks.json"] --> B["HooksConfig"]
 
@@ -116,6 +128,10 @@ flowchart TB
 ### 3.2 Hook 注册表
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Load as loadHooks()
     participant Registry as HookRegistry
@@ -138,6 +154,10 @@ sequenceDiagram
 ### 4.1 执行流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["executePreToolUseHooks()"] --> B["获取匹配的 hooks"]
 
@@ -179,6 +199,10 @@ flowchart TB
 ### 5.1 执行流程
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Hooks as PostToolUse Hooks
     participant Tool as Tool Result
@@ -199,6 +223,10 @@ sequenceDiagram
 ### 6.1 Stop Hook 类型
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["handleStopHooks()"] --> B["获取 stop hooks"]
 
@@ -227,6 +255,10 @@ flowchart TB
 ### 6.2 Stop Hook 条件
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["shouldRunHook()"] --> B{"file_path 条件?"}
 
@@ -247,6 +279,10 @@ flowchart TB
 ### 7.1 PreSampling Hook
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant PreSample as PreSampling Hooks
     participant Params as SamplingParams
@@ -264,6 +300,10 @@ sequenceDiagram
 ### 7.2 PostSampling Hook
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant PostSample as PostSampling Hooks
     participant Response as AssistantMessage
@@ -280,6 +320,10 @@ sequenceDiagram
 ### 8.1 错误策略
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["executeHook()"] --> B{"执行中出错?"}
 
@@ -294,6 +338,10 @@ flowchart TB
 ### 8.2 超时处理
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Hook as executeHook()
     participant Timer as Promise.race()
@@ -310,6 +358,10 @@ sequenceDiagram
 ### 9.1 调试模式
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["enableHookDebugging()"] --> B["registry.on()"]
 

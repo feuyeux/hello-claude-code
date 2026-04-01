@@ -5,6 +5,10 @@
 Claude Code 使用自定义的状态管理系统来管理应用状态，采用类似 Redux 的不可变更新模式。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Store["AppStateStore"]
         A1["AppState<br/>全局唯一状态"]
@@ -113,6 +117,10 @@ type DeepImmutable<T> = {
 ### 3.1 Store 接口
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart LR
     subgraph Interface["Store 接口"]
         A1["getState()"]
@@ -164,6 +172,10 @@ export function createStore<S>(initialState: S): Store<S> {
 ### 4.1 创建 Store
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["createAppStore()"] --> B["createStore<br/>AppState"]
     B --> C["appStore 实例"]
@@ -235,6 +247,10 @@ const createInitialState = (): AppState => ({
 ### 5.1 选择器工厂
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["createSelector(selector)"] --> B{"state 变化?"}
 
@@ -276,6 +292,10 @@ export const selectMainLoopModel = (state: AppState) =>
 ### 6.1 变更钩子
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Store as AppStateStore
     participant Handler as Handler
@@ -336,6 +356,10 @@ setAppState(prev => ({
 ### 7.2 批量更新
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["setAppState(prev => ...)"] --> B["执行多个更新"]
     B --> C["合并为单一状态"]
@@ -347,6 +371,10 @@ flowchart TB
 ### 8.1 Hook
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant Component as React Component
     participant Store as AppStateStore
@@ -371,6 +399,10 @@ sequenceDiagram
 **位置**: `src/utils/settings/settings.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["loadSettings()"] --> B{"settings.json 存在?"}
     B -->|是| C["读取并解析"]

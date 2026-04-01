@@ -290,7 +290,11 @@ HTTP hook 的设计明显比 shell hook 更谨慎：
 ## 15. 一张总图
 
 ```mermaid
-flowchart TB
+---
+config:
+  theme: neutral
+---
+flowchart LR
     A[settings hooks] --> D[hooks snapshot]
     B[plugin/builtin hooks] --> E[groupHooksByEventAndMatcher]
     C[session hooks] --> E

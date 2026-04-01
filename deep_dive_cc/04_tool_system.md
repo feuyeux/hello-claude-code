@@ -5,6 +5,10 @@
 工具系统是 Claude Code 与外部世界交互的核心机制，提供了文件操作、代码执行、Web 搜索等能力。
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Core["核心接口"]
         A1["Tool.ts<br/>接口定义"]
@@ -426,6 +430,10 @@ export const WebSearchTool = buildTool({
 **位置**: `src/services/tools/toolOrchestration.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["toolUseBlocks"] --> B{"查找工具"}
 
@@ -501,6 +509,10 @@ export class StreamingToolExecutor {
 **位置**: `src/utils/permissions/permissions.ts`
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A["工具调用请求"] --> B["工具自身检查"]
 

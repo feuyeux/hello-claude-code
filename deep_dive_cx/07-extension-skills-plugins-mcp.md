@@ -264,6 +264,10 @@
 ## 10. 扩展体系总图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     A[commands.ts] --> B[built-in commands]
     A --> C[skill dir commands]

@@ -5,6 +5,10 @@
 Claude Code 的启动流程分为以下几个阶段：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Entry["1. 入口点执行"]
         A1["Bun 运行时加载<br/>main.tsx / ink.ts"]
@@ -342,6 +346,10 @@ export async function startREPL() {
 ## 3. 启动时序图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant User as 用户
     participant Bun as Bun 运行时

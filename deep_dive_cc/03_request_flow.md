@@ -5,6 +5,10 @@
 当用户在 Claude Code 中输入一条消息时，请求经过以下处理流程：
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 flowchart TB
     subgraph Input["用户输入"]
         A1["PromptInput<br/>用户输入"]
@@ -540,6 +544,10 @@ interface SystemMessage {
 ## 7. 请求流程时序图
 
 ```mermaid
+---
+config:
+  theme: neutral
+---
 sequenceDiagram
     participant User as 用户
     participant UI as React Ink UI
