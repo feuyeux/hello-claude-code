@@ -1,10 +1,6 @@
 # 启动流程详解
 
-## 0. 阅读提示
-
-- 这篇回答的问题是：Claude Code CLI 从进程启动到 REPL 可交互，中间到底经过了哪些阶段。
-- 最适合在读完 [01-architecture.md](./01-architecture.md) 后阅读；如果你更关心交互态，再继续看 [03-repl-and-state.md](./03-repl-and-state.md)。
-- 阅读时重点抓三条线：性能关键路径、trust 安全边界、交互模式与非交互模式的分流。
+本文分析 Claude Code CLI 从进程启动到会话可交互之间的阶段划分、trust 边界和交互/非交互分流。
 
 ## 1. 总体时序图
 
@@ -30,15 +26,13 @@ sequenceDiagram
     end
 ```
 
-## 2. 先带着什么问题读
+## 2. 分析维度
 
-读这篇时，建议始终带着下面三个问题：
+启动链路可按三个维度理解：
 
 1. 哪些事情必须在首屏之前完成，哪些可以延后。
 2. 哪些阶段是为了安全边界，哪些阶段是为了体验和性能。
 3. 为什么同样是“启动”，交互模式和非交互模式的路径差这么多。
-
-如果这三个问题能答清楚，后面再看 `setup.ts`、`interactiveHelpers.tsx`、`replLauncher.tsx` 就不会迷路。
 
 ## 3. 阶段 0：比普通 import 更早的预取
 
@@ -85,7 +79,7 @@ sequenceDiagram
 2. 让 `plutil` / `reg query` 这些子进程和后面的重型 import 并行。
 3. 避免第一次真正读取 settings 时再同步阻塞。
 
-### 3.2 这类写法体现了什么
+### 3.2 工程含义
 
 体现了两个工程判断：
 
@@ -127,7 +121,7 @@ sequenceDiagram
 - 行为分流
 - 某些上下文或权限逻辑的区分
 
-也就是说，这不是一个普通字符串，而是“本次运行的身份标签”。
+这不是一个普通字符串，而是“本次运行的身份标签”。
 
 ## 5. 阶段 2：`init()` 做基础初始化
 
@@ -348,7 +342,7 @@ sequenceDiagram
 - 某些环境变量不会完整应用。
 - 某些外部 include 不会直接信任。
 
-也就是说：
+结论如下：
 
 > trust dialog 并不是 UI 装饰，而是 runtime 的安全分界线。
 
@@ -481,7 +475,7 @@ setup screens / Ink 首屏只是第一层目标。
 
 三段。
 
-## 13.4 “生产监控优先级很高”
+## 13.4 启动可观测性
 
 从 `profileCheckpoint`、`tengu_started`、startup timer、frame timing log、telemetry-after-trust 可以看出：
 
@@ -498,7 +492,7 @@ setup screens / Ink 首屏只是第一层目标。
 | `src/replLauncher.tsx` | App + REPL 装配 |
 | `src/components/App.tsx` | Provider 包装层 |
 
-## 15. 本文结论
+## 15. 总结
 
 这套启动流程的核心不是“把 REPL 打开”，而是：
 
@@ -508,7 +502,7 @@ setup screens / Ink 首屏只是第一层目标。
 4. 再进入 REPL。
 5. 首屏之后才补做剩余预取。
 
-这也是为什么后续阅读请求链路时，你会发现很多逻辑都依赖启动阶段已经准备好的：
+后续请求链路依赖启动阶段预先建立的以下基础：
 
 - `cwd`
 - `AppState`

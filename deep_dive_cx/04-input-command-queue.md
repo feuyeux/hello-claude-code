@@ -1,10 +1,6 @@
 # 用户输入、Slash 命令与队列分发
 
-## 0. 阅读提示
-
-- 这篇解释“用户敲下回车之后，系统如何决定这是不是一次真正进入模型的 turn”。
-- 最好在 [03-repl-and-state.md](./03-repl-and-state.md) 之后读；接下来通常会自然衔接到 [05-query-and-request.md](./05-query-and-request.md)。
-- 阅读时重点关注三类分流：输入类型分流、队列与中断分流、slash command 的本地执行与模型执行分流。
+本文分析用户提交输入后，系统如何完成输入分类、队列调度和 slash command 分流。
 
 ## 1. 这一层解决什么问题
 
@@ -273,7 +269,7 @@ flowchart TB
 - 当前 turn 使用哪个模型
 - 当前 turn 的 effort 等级
 
-也就是说，slash command 是“前置控制层”，而不是单纯文本宏。
+slash command 是前置控制层，而不是单纯的文本宏。
 
 ## 10. slash command 的三种典型结果
 
@@ -360,7 +356,7 @@ flowchart TB
 | QueryGuard | `src/utils/QueryGuard.ts` | 防止 query 重入 |
 | queue manager | `src/utils/messageQueueManager.ts` | 统一命令队列模型 |
 
-## 16. 本文结论
+## 16. 总结
 
 输入层的本质不是“把字符串发给模型”，而是：
 
@@ -370,4 +366,4 @@ flowchart TB
 4. 为当前 turn 注入工具权限、模型、effort 等局部策略。
 5. 在准备完毕后才把这次输入送入 query 主循环。
 
-这也是为什么后面读 `query.ts` 时，你会发现它接收到的已经不是“原始输入”，而是一组高度结构化的 `messages + ToolUseContext + turn 级策略`。
+`query.ts` 接收到的不是原始输入字符串，而是一组结构化的 `messages + ToolUseContext + turn 级策略`。

@@ -1,10 +1,6 @@
 # 扩展体系：技能、插件与 MCP
 
-## 0. 阅读提示
-
-- 这篇回答的是“外部扩展为什么不是边角料，而是直接并入命令总线和工具总线”。
-- 建议在 [06-tools-and-permissions.md](./06-tools-and-permissions.md) 之后阅读；如果你还想继续看子代理如何复用这些能力，可以接着读 [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)。
-- 阅读时把技能、插件、MCP 都当成“能力注入层”来看，会比按产品名称拆开看更容易建立统一模型。
+本文分析技能、插件与 MCP 如何直接并入命令总线和工具总线。
 
 ## 1. 这套工程为什么扩展能力这么强
 
@@ -19,7 +15,7 @@
 - 插件会贡献命令、技能、hooks、agent
 - MCP server 会贡献工具、资源，甚至在 SDK 模式下同进程运行
 
-这也是为什么 `src/commands.ts`、`src/skills/loadSkillsDir.ts`、`src/utils/plugins/loadPluginCommands.ts`、`src/services/mcp/client.ts` 都必须放在一篇里讲。
+因此 `src/commands.ts`、`src/skills/loadSkillsDir.ts`、`src/utils/plugins/loadPluginCommands.ts`、`src/services/mcp/client.ts` 需要放在同一篇里分析。
 
 ## 2. 命令装配总入口：`commands.ts`
 
@@ -59,7 +55,7 @@
 - built-in commands
 - dynamic skills
 
-也就是说，用户最终能输入的 `/xxx` 命令集合，是运行时动态拼出来的。
+用户最终能输入的 `/xxx` 命令集合，是运行时动态拼出来的。
 
 ## 3. 技能系统：`loadSkillsDir.ts`
 
@@ -88,7 +84,7 @@
 - `agent`
 - `effort`
 
-这很关键，因为它说明：
+这说明：
 
 - 技能不是另一套 DSL。
 - 技能就是一种特殊来源的 prompt command。
@@ -258,7 +254,7 @@
 - 拉取 tools
 - 生成 connected/failed 的 MCPServerConnection
 
-这很重要，因为它让：
+这一层统一了：
 
 - REPL 模式的外部 MCP
 - SDK 模式的同进程 MCP
@@ -338,7 +334,7 @@ flowchart TB
 | MCP tool call | `src/services/mcp/client.ts:3029-3245` | timeout/progress/auth/session |
 | SDK MCP | `src/services/mcp/client.ts:3262-3335` | 同进程 MCP 接入 |
 
-## 13. 本文结论
+## 13. 总结
 
 这套扩展体系的核心价值在于：
 

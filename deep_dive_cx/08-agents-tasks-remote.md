@@ -1,16 +1,12 @@
 # 多代理、后台任务与远程会话
 
-## 0. 阅读提示
-
-- 这篇聚焦子代理、后台任务和远程会话，不建议孤立阅读。
-- 最好先看 [06-tools-and-permissions.md](./06-tools-and-permissions.md) 和 [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)，因为这里的大量机制都是沿着工具系统和扩展系统继续展开的。
-- 阅读时重点抓住一条主线：`AgentTool` 并不是特殊后门，而是以普通工具协议接入多代理能力。
+本文分析子代理、后台任务与远程会话如何通过 `AgentTool` 接入统一运行时。
 
 ## 1. Agent 在这套系统里的真实地位
 
 在源码中，子代理不是一个平行子系统，而是工具系统的一部分。
 
-也就是说：
+系统关系如下：
 
 - 主模型通过 `AgentTool` 启动子代理。
 - 子代理再运行自己的 `query()`。
@@ -180,7 +176,7 @@ fork path 的设计目标是：
 - 注册 cleanup handler
 - 注册到 `AppState.tasks`
 
-也就是说，后台 agent 首先是一个任务对象，然后才是一个执行流。
+后台 agent 首先是一个任务对象，然后才是一个执行流。
 
 ## 9. foreground agent 也能被后台化
 
@@ -381,7 +377,7 @@ flowchart TB
 | runAgent 主体 | `src/tools/AgentTool/runAgent.ts:430-860` | 子代理上下文构造与 query 运行 |
 | 远程会话管理 | `src/remote/RemoteSessionManager.ts:87-260` | WS/HTTP/control message 流 |
 
-## 15. 本文结论
+## 15. 总结
 
 多代理体系的核心设计是：
 

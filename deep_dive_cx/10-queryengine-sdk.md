@@ -1,10 +1,6 @@
 # `QueryEngine` 与 SDK/非交互路径
 
-## 0. 阅读提示
-
-- 这篇解释的是“没有 REPL 时，系统如何仍然复用同一套 query 内核”。
-- 建议在 [05-query-and-request.md](./05-query-and-request.md) 之后阅读；如果你还没建立交互式路径的心智模型，先补 [03-repl-and-state.md](./03-repl-and-state.md) 会更顺。
-- 阅读时重点对照 REPL 路径与 headless 路径的同与不同，而不是把 `QueryEngine` 当成另一套完全独立的实现。
+本文分析没有 REPL 时，系统如何通过 `QueryEngine` 复用同一套 query 内核。
 
 ## 1. 为什么还要专门讲 `QueryEngine`
 
@@ -141,7 +137,7 @@
 - attribution 与 file history 更新器
 - `setSDKStatus`
 
-也就是说，headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”。
+headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”。
 
 ## 7. orphaned permission 在 QueryEngine 里有专门恢复逻辑
 
@@ -310,7 +306,7 @@ flowchart TB
 | 进入 query | `src/QueryEngine.ts:675-686` | 复用 query 内核 |
 | result / budget / structured output 结束条件 | `src/QueryEngine.ts:971-1047` | headless 模式特有结果控制 |
 
-## 18. 本文结论
+## 18. 总结
 
 `QueryEngine` 证明了这套工程真正复用的是“内核”，不是“界面”。
 

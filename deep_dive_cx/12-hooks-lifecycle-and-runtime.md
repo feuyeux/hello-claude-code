@@ -1,10 +1,6 @@
 # Hooks 生命周期与运行时语义
 
-## 0. 阅读提示
-
-- 这篇专门分析 hooks，不再把它们当作“顺手插几条脚本”的边缘能力。
-- 建议先读 [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)，因为 hooks 是否可见、是否只允许 managed hooks，先由 settings/policy 决定。
-- 阅读时重点看三层：hooks 从哪里来、如何被执行、为什么它们有独立的安全和运行时约束。
+本文分析 hooks 的来源、执行方式以及独立的安全和运行时约束。
 
 ## 1. 为什么 hooks 需要单独成篇
 
@@ -181,7 +177,7 @@ snapshot 的意义不是简单 cache，而是：
 - `worktreePath`
 - elicitation response override
 
-也就是说 hook 已经不是“打印一段提示词给模型看”，而是：
+hook 已经不是“打印一段提示词给模型看”，而是：
 
 > 一个结构化的控制协议，能够回写权限决策、工具输入、MCP 响应、文件观察集甚至 worktree 路径。
 
@@ -330,7 +326,7 @@ flowchart TB
 | frontmatter hook 注册 | `src/utils/hooks/registerFrontmatterHooks.ts`, `src/utils/hooks/registerSkillHooks.ts` | 技能/代理 hook 动态注入 |
 | async hook registry | `src/utils/hooks/AsyncHookRegistry.ts:30-101` | 后台 hook 进度与收尾 |
 
-## 17. 本文结论
+## 17. 总结
 
 这套 hooks 系统的本质不是“在某些节点跑脚本”，而是：
 

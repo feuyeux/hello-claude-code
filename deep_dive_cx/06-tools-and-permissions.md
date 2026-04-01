@@ -1,10 +1,6 @@
 # 工具系统与权限机制
 
-## 0. 阅读提示
-
-- 这篇解释的是“模型如何从输出文本，升级为持续调用工具的 Agent”。
-- 建议在 [05-query-and-request.md](./05-query-and-request.md) 之后阅读；如果你关心扩展接入，再继续看 [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)。
-- 阅读时重点看三层：工具协议层、权限判定层、执行编排层。
+本文分析模型如何通过工具协议、权限判定和执行编排进入持续调用工具的 Agent 运行方式。
 
 ## 1. 为什么工具系统是这套工程的主轴
 
@@ -119,7 +115,7 @@
 
 ### 3.3 `assembleToolPool(permissionContext, mcpTools)`
 
-这一步很重要，因为它不仅合并工具，还会做去重与顺序稳定。
+这一步不仅合并工具，还会做去重与顺序稳定。
 
 顺序稳定的意义在于：
 
@@ -173,7 +169,7 @@ async (tool, input, toolUseContext, assistantMessage, toolUseID, forceDecision?)
 - speculative bash classifier grace period
 - 最后才落到交互式 permission dialog
 
-也就是说权限路径大致是：
+权限路径大致是：
 
 > 静态规则 -> 自动化判断 -> 协调模式特判 -> 交互式确认
 
@@ -352,7 +348,7 @@ flowchart LR
 - 模型调用 AgentTool 与调用 BashTool 在协议层没有本质区别。
 - 子代理只是工具系统的一种高级能力。
 
-这也是整个工程能做到“模型调用模型”的根本原因。
+这构成了整个工程实现“模型调用模型”的基础。
 
 ## 14. 工具结果为什么最终还是消息
 
@@ -377,7 +373,7 @@ flowchart LR
 | 输入校验 | `src/services/tools/toolExecution.ts:599-720` | safeParse + validateInput |
 | 权限入口 | `src/hooks/useCanUseTool.tsx` | allow / deny / ask 决策链 |
 
-## 16. 本文结论
+## 16. 总结
 
 工具系统是这套工程的执行总线：
 

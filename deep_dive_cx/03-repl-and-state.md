@@ -1,14 +1,10 @@
 # REPL 与状态管理
 
-## 0. 阅读提示
-
-- 这篇聚焦交互模式下的控制中心，也就是 `REPL.tsx` 周边的状态、事件和消息流。
-- 建议先看 [02-startup-flow.md](./02-startup-flow.md)，再看这篇；接下来通常会顺着读到 [04-input-command-queue.md](./04-input-command-queue.md) 和 [05-query-and-request.md](./05-query-and-request.md)。
-- 阅读时不要把 `REPL.tsx` 当“视图组件”，而要把它当“会话控制器 + UI 容器”。
+本文聚焦交互模式下的控制中心，即 `REPL.tsx` 周边的状态、事件和消息流。
 
 ## 1. 为什么 `REPL.tsx` 是理解全工程的第二入口
 
-很多人阅读这类项目时，会误以为 `query.ts` 才是唯一核心。实际上对于交互模式来说，真正的运行控制中心是：
+交互模式下的运行控制中心是：
 
 - `src/screens/REPL.tsx`
 
@@ -22,7 +18,7 @@
 - 处理流式消息
 - 接驳后台任务、远程会话、队列、收件箱、邮箱桥接
 
-所以可以把它看成：
+它可以视为：
 
 > “交互式会话控制器 + TUI 视图容器”
 
@@ -48,7 +44,7 @@ flowchart TB
 
 ### 2.1 `App.tsx` 的作用
 
-`src/components/App.tsx` 很薄，但很重要，因为它说明：
+`src/components/App.tsx` 虽然很薄，但它说明：
 
 - 性能指标、统计、AppState 上下文是整个 REPL 的基础 Provider。
 - 这些东西不是挂在单个局部组件上，而是全局会话级能力。
@@ -234,7 +230,7 @@ REPL 初始化不是单纯加载一个输入框，而是在建立多个“交互
 2. 调用 `handlePromptSubmit({...})`。
 3. 把 `queryGuard`、`commands`、`messagesRef.current`、`mainLoopModel`、`onQuery`、`canUseTool` 等都传进去。
 
-也就是说，真正的输入编排逻辑被下放给 `handlePromptSubmit`，而 REPL 负责把“当前会话环境”打包进去。
+真正的输入编排逻辑下放给 `handlePromptSubmit`，而 REPL 负责把当前会话环境一并打包进去。
 
 ## 10. 队列处理为什么放在 REPL 而不是 query
 
@@ -363,9 +359,9 @@ flowchart LR
     M --> N[setMessages / setStreamingState]
 ```
 
-## 16. 阅读 REPL 的建议方式
+## 16. 源码阅读顺序
 
-不要试图从头到尾线性阅读整个文件。推荐只抓这几段：
+推荐优先关注以下区段：
 
 1. 初始化 hook 区域：看 REPL 挂了哪些能力。
 2. `onSubmit`：看用户输入如何进入系统。
@@ -373,7 +369,7 @@ flowchart LR
 4. `onQueryImpl`：看 UI 如何拼出一次 query。
 5. 队列与 incoming prompt：看会话如何接纳非输入框来源的消息。
 
-## 17. 本文结论
+## 17. 总结
 
 `REPL.tsx` 的核心价值不是“渲染聊天窗口”，而是把整个交互运行时协调起来：
 
@@ -382,4 +378,4 @@ flowchart LR
 - `onQueryImpl` 是交互主线程进入 query 引擎的桥。
 - `onQueryEvent` 是 query 结果回流到 UI 的桥。
 
-理解 REPL，后面再看输入链路与 query 主循环，就会自然很多。
+输入链路与 `query()` 主循环都通过 REPL 这一层接入交互运行时。

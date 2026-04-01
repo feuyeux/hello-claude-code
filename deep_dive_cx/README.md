@@ -16,7 +16,7 @@
 
 ## 1. 推荐阅读顺序
 
-建议按下面顺序阅读：
+推荐阅读顺序如下：
 
 1. [01-architecture.md](./01-architecture.md)：先建立分层和主线。
 2. [02-startup-flow.md](./02-startup-flow.md)：再理解 CLI 如何启动成一个可运行会话。
@@ -29,9 +29,11 @@
 9. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)：看扩展如何接入命令和工具总线。
 10. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)：看子代理、后台任务和远程会话。
 11. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)：补齐 transcript、resume 与恢复链路。
-12. [09-performance-cache-context.md](./09-performance-cache-context.md)：把性能、缓存和上下文治理串起来。
-13. [10-queryengine-sdk.md](./10-queryengine-sdk.md)：再看非交互/SDK 路径如何复用内核。
-14. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)：最后补 API provider、retry 与错误治理。
+12. [15-prompt-system.md](./15-prompt-system.md)：把 system prompt、工具 prompt、技能 prompt、子代理 prompt 和二级模型 prompt 串成一张图。
+13. [16-memory-system.md](./16-memory-system.md)：把 auto-memory、team memory、KAIROS daily log、SessionMemory、dream consolidation 串成一条持久化主线。
+14. [09-performance-cache-context.md](./09-performance-cache-context.md)：把性能、缓存和上下文治理串起来。
+15. [10-queryengine-sdk.md](./10-queryengine-sdk.md)：再看非交互/SDK 路径如何复用内核。
+16. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)：最后补 API provider、retry 与错误治理。
 
 ## 2. 各篇一句话索引
 
@@ -51,6 +53,8 @@
 | [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md) | hooks 到底如何被组装、执行和约束 | 想把 hook 当运行时系统来理解时 |
 | [13-session-storage-and-resume.md](./13-session-storage-and-resume.md) | transcript 如何持久化，resume 如何真正恢复 live session | 想研究会话恢复与 JSONL 结构时 |
 | [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md) | provider 选择、重试与错误治理如何工作 | 想深挖 `services/api` 时 |
+| [15-prompt-system.md](./15-prompt-system.md) | Claude Code 到底有哪些提示词，它们如何被装配、缓存和分发 | 想系统理解 prompt runtime 时 |
+| [16-memory-system.md](./16-memory-system.md) | 记忆系统有哪些层，KAIROS daily log 为什么是另一条持久化路线 | 想专门研究长期上下文与 memory 治理时 |
 
 ## 3. 按目标选读
 
@@ -63,8 +67,10 @@
 3. [03-repl-and-state.md](./03-repl-and-state.md)
 4. [04-input-command-queue.md](./04-input-command-queue.md)
 5. [05-query-and-request.md](./05-query-and-request.md)
-6. [06-tools-and-permissions.md](./06-tools-and-permissions.md)
-7. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+6. [15-prompt-system.md](./15-prompt-system.md)
+7. [16-memory-system.md](./16-memory-system.md)
+8. [06-tools-and-permissions.md](./06-tools-and-permissions.md)
+9. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
 
 ### 3.2 想理解“为什么这个项目这么大”
 
@@ -72,10 +78,12 @@
 
 1. [01-architecture.md](./01-architecture.md)
 2. [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)
-3. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
-4. [09-performance-cache-context.md](./09-performance-cache-context.md)
-5. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)
-6. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
+3. [15-prompt-system.md](./15-prompt-system.md)
+4. [16-memory-system.md](./16-memory-system.md)
+5. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+6. [09-performance-cache-context.md](./09-performance-cache-context.md)
+7. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)
+8. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
 
 ### 3.3 想研究 SDK / headless / 自动化场景
 
@@ -83,19 +91,33 @@
 
 1. [01-architecture.md](./01-architecture.md)
 2. [05-query-and-request.md](./05-query-and-request.md)
-3. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
-4. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
-5. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
-6. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
+3. [15-prompt-system.md](./15-prompt-system.md)
+4. [16-memory-system.md](./16-memory-system.md)
+5. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
+6. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
+7. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
+8. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
 
 ### 3.4 想研究配置、hooks 与 resume 这些“隐藏复杂度”
 
 按下面顺序读：
 
 1. [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)
-2. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+2. [15-prompt-system.md](./15-prompt-system.md)
+3. [16-memory-system.md](./16-memory-system.md)
+4. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+5. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
+6. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
+
+### 3.5 想专门研究“长期记忆、会话续航、KAIROS”
+
+按下面顺序读：
+
+1. [15-prompt-system.md](./15-prompt-system.md)
+2. [16-memory-system.md](./16-memory-system.md)
 3. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
-4. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
+4. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
+5. [02-startup-flow.md](./02-startup-flow.md)
 
 ## 4. 建议先记住的术语
 

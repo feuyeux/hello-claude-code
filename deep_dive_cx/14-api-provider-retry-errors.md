@@ -1,10 +1,6 @@
 # API Provider 选择、请求构造、重试与错误治理
 
-## 0. 阅读提示
-
-- 这篇补的是当前文档最明显的一块空白：`query()` 最终如何落到不同 provider、如何构造请求、如何重试、如何把底层错误翻译成用户可理解的会话消息。
-- 建议先读 [05-query-and-request.md](./05-query-and-request.md) 和 [09-performance-cache-context.md](./09-performance-cache-context.md)。
-- 阅读时重点看四层：client 选择、request builder、retry 语义、error-to-message 映射。
+本文分析 `query()` 如何落到不同 provider、如何构造请求、如何重试，以及如何把底层错误翻译成会话消息。
 
 ## 1. 为什么这一块不能只看 `claude.ts`
 
@@ -246,7 +242,7 @@
 - 会打 telemetry
 - 抛出 `FallbackTriggeredError`
 
-这个设计很重要，因为它把“主模型切到 fallback 模型”从内部细节提升成了一个显式状态转换。
+这个设计把“主模型切到 fallback 模型”从内部细节提升成了一个显式状态转换。
 
 ## 13. unattended/persistent retry 说明系统支持“长时间无人值守等待”
 
@@ -371,7 +367,7 @@ flowchart TB
 | 错误转会话消息 | `src/services/api/errors.ts:439-930` | 429、413、prompt-too-long、media 错误 |
 | repeated 529 信号 | `src/services/api/errors.ts:166`, `983-1015` | overloaded 错误统一表达 |
 
-## 20. 本文结论
+## 20. 总结
 
 这条 API 主线的核心不是“把 messages 发给模型”，而是：
 
@@ -380,4 +376,4 @@ flowchart TB
 3. 用 `withRetry()` 把重试、fallback、auth refresh、context overflow 修正做成显式状态机。
 4. 用 `errors.ts` 把底层 provider/raw error 翻译成会话内可消费的 assistant message。
 
-这也是为什么 `services/api` 目录虽然被 `query()` 包在后面，但实际上承担了大量真正的运行时策略。
+`services/api` 目录虽然位于 `query()` 之后，但实际承担了大量运行时策略。

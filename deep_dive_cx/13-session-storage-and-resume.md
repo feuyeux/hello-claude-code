@@ -1,10 +1,6 @@
 # Transcript 持久化、会话恢复与 `resume` 语义
 
-## 0. 阅读提示
-
-- 这篇分析的是会话如何被写入磁盘、如何在 `--resume`/`--continue` 时恢复，以及为什么 transcript 子系统比看起来复杂得多。
-- 建议先读 [03-repl-and-state.md](./03-repl-and-state.md)、[05-query-and-request.md](./05-query-and-request.md) 和 [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)。
-- 阅读时重点抓三条线：JSONL 写入模型、链式恢复模型、resume 后如何把磁盘状态重新变回内存状态。
+本文分析会话如何写入磁盘，以及 `--resume` / `--continue` 如何把磁盘状态重新恢复为 live runtime。
 
 ## 1. 这套系统存的不是“聊天记录”，而是 append-only 会话日志
 
@@ -48,7 +44,7 @@
 - `resume`、branch、worktree 等操作会切换 active session
 - 如果 transcript path 仍按旧的 `originalCwd` 推导，就会发生“hook 看到的 transcript_path”和真实落盘位置不一致
 
-也就是说，会话文件定位本身就是恢复语义的一部分。
+会话文件定位本身就是恢复语义的一部分。
 
 ## 3. 文件是延迟 materialize 的，不是 session 一开始就创建
 
@@ -115,7 +111,7 @@ session file 的创建时机非常克制：
 - progress 是 UI 状态
 - 如果让它进入 parent chain，会在 resume 时把真实对话链截断或分叉
 
-这也是为什么这里会有：
+因此这里会有：
 
 - `isLegacyProgressEntry()`
 - `progressBridge`
@@ -258,7 +254,7 @@ session file 的创建时机非常克制：
 
 让当前 session 直接继续写原 transcript 文件。
 
-也就是说，`resume` 完整闭环至少跨了三层：
+`resume` 的完整闭环至少跨了三层：
 
 1. sessionStorage 读与链重建
 2. conversationRecovery 反序列化与中断检测
@@ -294,7 +290,7 @@ flowchart TB
 | resume 装配入口 | `src/utils/conversationRecovery.ts:459-589` | 多来源 resume 的统一入口 |
 | 状态回灌 | `src/utils/sessionRestore.ts:99-145`, `200-249`, `332-357`, `409-527` | file history / worktree / agent / AppState 恢复 |
 
-## 14. 本文结论
+## 14. 总结
 
 这套 transcript/resume 体系的核心不是“把历史消息保存下来”，而是：
 
@@ -303,4 +299,4 @@ flowchart TB
 3. 用大文件裁剪、legacy bridge、metadata 重追加保证 resume 质量。
 4. 用 conversationRecovery + sessionRestore 把磁盘日志重新转换回 live runtime。
 
-这也是为什么 `resume` 在这个仓库里会跨 `sessionStorage.ts`、`conversationRecovery.ts`、`sessionRestore.ts` 三个大文件，而不是一个简单的“读取历史记录”函数。
+因此 `resume` 会跨 `sessionStorage.ts`、`conversationRecovery.ts`、`sessionRestore.ts` 三个大文件，而不是一个简单的“读取历史记录”函数。

@@ -1,10 +1,6 @@
 # 设置系统、托管策略与环境变量注入
 
-## 0. 阅读提示
-
-- 这篇解释的是：Claude Code 的 `settings` 并不是单一 JSON 文件，而是一套“多源合并 + 托管策略优先 + trust 前后分阶段生效”的配置系统。
-- 建议在 [02-startup-flow.md](./02-startup-flow.md) 之后阅读，因为启动阶段已经大量依赖这套系统。
-- 阅读时重点看四件事：设置源优先级、policy/MDM 的特殊语义、环境变量的两阶段注入、变更检测如何把磁盘变化变成运行期行为。
+本文分析 `settings` 如何通过多源合并、托管策略和 trust 前后分阶段注入影响运行时行为。
 
 ## 1. 为什么这是一条独立主线
 
@@ -48,7 +44,7 @@
 - 插件设置先作为更低优先级 base 合进来，然后才轮到文件型 sources。
 - `policySettings` 自己内部不是 deep merge 链，而是 “first source wins”。
 
-这也是为什么只背一个“用户 < 项目 < 本地 < CLI < 托管”的顺序还不够。
+仅记住“用户 < 项目 < 本地 < CLI < 托管”的顺序并不足以解释实际行为。
 
 ## 3. `--setting-sources` 不是装饰参数，而是初始化边界条件
 
@@ -91,7 +87,7 @@
 - 这个列表又会进入发给模型的 tool description
 - 如果路径每次都带随机 UUID，就会不断破坏 prompt cache prefix
 
-也就是说这里不是“为了方便调试”，而是：
+这里的目的不是“为了方便调试”，而是：
 
 > 配置文件路径本身会变成请求语义的一部分，因此连临时文件名都要为 cache 稳定性服务。
 
@@ -193,7 +189,7 @@
 3. 轮询 MDM registry/plist，因为这类变化无法可靠走普通 FS watch。
 4. 在发现变化后执行 `ConfigChange` hooks，并允许 hook 阻止本次变更应用到当前 session。
 
-也就是说它不是“发现变化然后 reset cache”这么简单，而是：
+它不是“发现变化然后 reset cache”这么简单，而是：
 
 > 把磁盘级配置变化，升级成一套带审查、带抑制、带 hook 的运行期事件。
 
@@ -228,7 +224,7 @@
 
 > 恶意项目不应通过共享 project config 自动接受危险权限对话框或 auto mode opt-in。
 
-这很重要，因为它说明 settings 并不是单纯的 merge 结果消费方，而是：
+这说明 settings 并不是单纯消费 merge 结果，而是：
 
 - 某些行为读 merged settings
 - 某些安全决策只信任 user/local/flag/policy
@@ -265,7 +261,7 @@ flowchart TB
 | 文件变化处理 | `src/utils/settings/changeDetector.ts:268-344` | reset cache + ConfigChange hooks |
 | MDM 轮询 | `src/utils/settings/changeDetector.ts:381-430` | registry/plist 变化需要 poll |
 
-## 13. 本文结论
+## 13. 总结
 
 这套 settings 系统的核心不是“读配置文件”，而是：
 
@@ -274,4 +270,4 @@ flowchart TB
 3. 用 trust 前后的 env 两阶段注入保证安全边界。
 4. 用 watcher、MDM poll 和 `ConfigChange` hooks 把配置变化纳入运行期治理。
 
-这也是为什么启动链路、权限系统、hooks、provider 选择都离不开它。
+启动链路、权限系统、hooks 与 provider 选择都依赖这条设置主线。
