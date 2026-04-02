@@ -6,160 +6,103 @@
 
 每次提交代码时，必须指定作者为 Gemini，并在 commit message 末尾加上 co-author trailer。
 
-**提交命令示例**：
 ```bash
 git commit --author="Gemini <gemini@google.com>" -m "你的提交说明"
 ```
 
-**Co-author Trailer**：
-```
+```text
 Co-authored-by: Gemini <gemini@google.com>
 ```
 
 ## 工作区结构
 
-```
+```text
 hello-claude-code/
-├── claude-code/        # 源代码目录（反编译还原的 Claude Code CLI）
-├── deep_dive_cc/       # Claude Code 深度分析文档（10 篇）
-├── deep_dive_cx/       # Codex 视角深度分析文档（10 篇 + README）
-├── deep_dive_gi/       # Gemini 视角深度分析文档（10 篇）
-└── doc/                # 其他文档
+├── claude-code/     # 反编译还原的 Claude Code CLI 源码
+├── deep_dive/       # 当前唯一的统一成稿目录
+├── deep_dive_cc/    # 历史分析文档 / 来源材料
+├── deep_dive_cx/    # 历史分析文档 / 来源材料
+├── deep_dive_gi/    # 历史分析文档 / 来源材料
+└── doc/             # 其他文档
 ```
 
-## 分析文档规范
+## 统一文档体系
 
-在 `deep_dive_cc/`、`deep_dive_cx/`、`deep_dive_gi/` 目录下撰写或修改分析文档时，遵守以下规范：
+当前分析文档以 `deep_dive/` 为准。
 
-**语言**：全部使用中文撰写，表达要自然流畅，避免机械罗列和模板化措辞。
+- `deep_dive/README.md` 是统一导航和阅读入口。
+- `deep_dive_cc/`、`deep_dive_cx/`、`deep_dive_gi/` 仍可作为历史材料参考，但默认不再作为新的成稿目标。
+- 如果任务没有明确点名旧目录，优先修改 `deep_dive/`。
 
-**文件命名**：序号 + 英文描述 + 下划线分隔，例如 `01_architecture_overview.md`、`07_mcp_protocol.md`。
+## 文档写作规范
 
-**配图格式**：
-- 流程图、时序图、简单架构图 → 使用 Mermaid 格式（`\`\`\`mermaid`）
-- 复杂系统架构图、多层级关系图 → 使用 draw.io XML 格式（`\`\`\`xml` 并注明 draw.io）
+在 `deep_dive/` 下撰写或修改分析文档时，遵守以下规范：
 
-**写作风格**：像在给同事讲清楚一个系统一样写，有观点、有判断，不要只是堆砌事实。
+- 语言：全部使用中文。
+- 口吻：直接面向最终读者，不写成与编辑者互动的过程记录。
+- 结构：一个主题只在一篇主文档中完整展开，其他位置只保留摘要与引用。
+- 文件命名：两位序号 + kebab-case，例如 `07-context-management.md`、`18-api-provider-retry-errors.md`。
+- 配图：流程图、时序图、关系图优先使用 Mermaid；只有 Mermaid 明显不适合时才用 draw.io XML。
+- 导航：新增、拆分或重组主题时，必须同步更新 `deep_dive/README.md` 和受影响的交叉引用。
+- 旧目录：若用户明确要求编辑 `deep_dive_cc/`、`deep_dive_cx/`、`deep_dive_gi/`，保留该目录既有命名风格，不顺手重命名。
 
 ## 项目概述
 
-`claude-code/` 是 Anthropic 官方 Claude Code CLI 工具的反编译/逆向还原版本。本质上是一套高度产品化的终端 Agent 运行时，而非普通聊天界面。
+`claude-code/` 是 Anthropic 官方 Claude Code CLI 的反编译 / 逆向还原版本。本质上是一套终端中的 Agent 运行时，而非普通聊天界面。
 
-- 运行时：**Bun** >= 1.3.11（非 Node.js）
+- 运行时：Bun `>= 1.3.11`
 - 语言：TypeScript + TSX
-- UI 框架：React + Ink（终端 TUI）
-- 模块系统：ESM，Bun workspaces monorepo
+- UI：React + Ink 终端 TUI
+- 模块系统：ESM + Bun workspaces
+
+## 常用命令
+
+在 `claude-code/` 目录下执行：
+
+```bash
+bun install
+bun run dev
+bun run build
+bun run lint
+bun run lint:fix
+bun run format
+bun test
+```
 
 ## 关键路径速查
 
 | 路径 | 说明 |
-|------|------|
-| `claude-code/src/entrypoints/cli.tsx` | 入口，polyfill `feature()`（始终 `false`）、`MACRO`、构建全局变量 |
-| `claude-code/src/main.tsx` | Commander.js CLI 定义，参数解析，启动 REPL/管道模式 |
-| `claude-code/src/query.ts` | 请求主循环状态机（1700+ 行），多轮 assistant→tool→result 循环 |
-| `claude-code/src/QueryEngine.ts` | 高层编排器（1300+ 行），对话状态、压缩、归因 |
-| `claude-code/src/screens/REPL.tsx` | 交互式终端 UI（5000+ 行），输入编排、会话协调、主循环接线 |
-| `claude-code/src/services/api/claude.ts` | API 客户端（3400+ 行），支持 Anthropic / Bedrock / Vertex / Azure |
-| `claude-code/src/tools/` | 工具实现目录（BashTool, FileEditTool, AgentTool 等） |
-| `claude-code/src/tools.ts` | 工具注册表，运行时动态组装工具池 |
-| `claude-code/src/Tool.ts` | Tool 接口协议与 `buildTool()` 工厂 |
-| `claude-code/src/state/AppState.tsx` | 中央应用状态上下文 |
-| `claude-code/src/state/store.ts` | 轻量自研 Zustand-like store |
-| `claude-code/src/services/mcp/` | MCP 协议实现（24 文件，12000+ 行） |
-| `claude-code/src/commands/` | 100+ 个 `/xxx` 斜杠命令实现 |
-| `claude-code/src/bridge/` | 远程控制桥接系统 |
-| `claude-code/packages/` | Monorepo 内部包（大部分为 stub） |
+| --- | --- |
+| `claude-code/src/entrypoints/cli.tsx` | 入口 polyfill 与全局变量注入 |
+| `claude-code/src/main.tsx` | Commander.js CLI 定义与模式分流 |
+| `claude-code/src/query.ts` | 请求主循环状态机 |
+| `claude-code/src/QueryEngine.ts` | Headless / SDK 会话编排器 |
+| `claude-code/src/screens/REPL.tsx` | 交互式终端控制中心 |
+| `claude-code/src/services/api/claude.ts` | API client 与 provider 适配层 |
+| `claude-code/src/tools.ts` | 工具池装配入口 |
+| `claude-code/src/Tool.ts` | Tool 协议与 `buildTool()` 工厂 |
+| `claude-code/src/services/mcp/` | MCP client、transport、tool/resource/prompt 接入 |
+| `claude-code/src/bridge/` | 远程桥接与会话控制 |
+| `claude-code/src/state/` | AppState、store、selector 与状态更新 |
 
-## 架构要点
+## 工作注意事项
 
-### 整体分层
+- 不要顺手修复大批量 tsc 错误。反编译产生的类型问题不影响 Bun 运行时。
+- 所有 `feature("...")` 调用在当前构建里都等价于 `false`，feature flag 分支默认视为死代码。
+- React Compiler 反编译样板如 `const $ = _c(N)` 是正常输出。
+- `audio-capture-napi`、`image-processor-napi`、`modifiers-napi`、`url-handler-napi`、`@ant/*` 都是 stub。
+- `src/*` 路径别名是合法导入路径。
 
-```mermaid
-flowchart TB
-    subgraph 入口层
-        A1["cli.tsx — polyfill 注入"]
-        A2["main.tsx — CLI 解析 & 分流"]
-    end
-    subgraph 交互层
-        B["REPL.tsx — 终端 UI & 主循环接线"]
-    end
-    subgraph 核心层
-        C1["query.ts — 请求状态机"]
-        C2["QueryEngine.ts — 会话编排"]
-    end
-    subgraph 能力层
-        D1["tools/ — 工具实现"]
-        D2["commands/ — 斜杠命令"]
-        D3["services/mcp/ — MCP 协议"]
-    end
-    subgraph 基础层
-        E1["services/api/ — API 客户端"]
-        E2["state/ — 应用状态"]
-        E3["services/compact/ — 上下文压缩"]
-    end
-    入口层 --> 交互层 --> 核心层 --> 能力层 --> 基础层
-```
+## 首选参考
 
-### 核心设计原则
+优先从 [deep_dive/README.md](./deep_dive/README.md) 开始。
 
-- 入口层很重：`main.tsx` 承担 CLI 解析、策略分流、首屏性能优化、首轮上下文准备
-- UI 层不是纯展示：`REPL.tsx` 同时承担输入编排、会话状态协调、主循环接线、后台任务接驳
-- 请求层是自循环状态机：一次用户输入可能经历多轮 `assistant → tool_use → tool_result → assistant`
-- 工具系统是第一公民：Tool 定义、权限判定、并发批处理、MCP 代理、流式执行都在主链路中
-- 扩展体系不是外挂：技能、插件、MCP 直接并入命令表、工具池和主循环
+如果只需要抓主线，优先看：
 
-### API 支持的 Provider
+1. `deep_dive/01-architecture.md`
+2. `deep_dive/06-query-and-request.md`
+3. `deep_dive/07-context-management.md`
+4. `deep_dive/14-prompt-system.md`
+5. `deep_dive/15-memory-system.md`
 
-| Provider | 说明 |
-|----------|------|
-| Anthropic Direct | API Key + OAuth |
-| AWS Bedrock | 支持凭据刷新、Bearer Token |
-| Google Vertex AI | 支持 GCP 凭据刷新 |
-| Azure AI Foundry | API Key + Azure AD |
-
-### 上下文压缩梯度
-
-系统有多级压缩机制，防止 context 超限：
-
-```mermaid
-flowchart LR
-    A["snip\n手动裁剪"] --> B["microcompact\n轻量压缩"] --> C["autocompact\n自动触发"] --> D["reactive compact\n响应式"] --> E["API compact\n摘要压缩"]
-```
-
-### Feature Flag 系统
-
-30 个 feature flag 全部被 polyfill 为 `false`，包括：`KAIROS`、`PROACTIVE`、`COORDINATOR_MODE`、`BRIDGE_MODE`、`VOICE_MODE` 等。flag 后面的代码均为死代码。
-
-### Stub 包
-
-以下包为 stub，不提供实际功能：
-
-- `audio-capture-napi`、`image-processor-napi`、`modifiers-napi`、`url-handler-napi`
-- `@ant/claude-for-chrome-mcp`、`@ant/computer-use-mcp`、`@ant/computer-use-input`、`@ant/computer-use-swift`
-- `color-diff-napi` 是唯一完整实现的 native 包（997 行，终端 color diff）
-
-## 参考文档
-
-`deep_dive_gi/` 目录包含 Gemini 视角的完整分析（文件命名遵循序号 + 英文 + 下划线规范）：
-
-| 文件 | 主题 |
-|------|------|
-| `01_architecture.md` | **整体架构**：技术栈、模块职责、交互流程 |
-| `02_startup_flow.md` | **启动流程**：进程启动、首屏关键路径、延迟预取 |
-| `03_repl_and_state.md` | **交互与状态**：Ink/React 控制中心、AppState 存储 |
-| `04_input_command_queue.md` | **输入队列**：用户输入分类、命令排队、消息流转 |
-| `05_query_and_request.md` | **Query 主循环**：多轮状态机、工具回流、流式响应 |
-| `06_tools_and_permissions.md` | **工具系统**：Tool 接口、权限判定、执行编排 |
-| `07_extension_skills_plugins_mcp.md` | **扩展机制**：MCP 协议、技能与插件系统 |
-| `08_agents_tasks_remote.md` | **子代理与任务**：后台任务、远程会话与代理协同 |
-| `09_performance_cache_context.md` | **性能优化**：缓存策略、长会话优化与稳定性 |
-| `10_queryengine_sdk.md` | **SDK 模式**：Headless 路径与内部内核复用 |
-| `11_settings_policy_and_env.md` | **配置与策略**：Settings、MDM Policy 与环境注入 |
-| `12_hooks_lifecycle_and_runtime.md` | **Hooks 运行时**：生命周期钩子、组装与约束 |
-| `13_session_storage_and_resume.md` | **会话恢复**：Transcript 持久化、Session Resume |
-| `14_api_provider_retry_errors.md` | **API 治理**：Provider 选择、重试机制与错误处理 |
-| `15_prompt_system.md` | **Prompt 运行时**：提示词装配、缓存分发与注入 |
-| `16_memory_system.md` | **记忆系统**：长期记忆、KAIROS 日志与知识图谱 |
-| `17_context_management.md` | **上下文治理**：多级压缩、Overflow 恢复与治理 |
-
-其他参考：`deep_dive_cc/`（Claude Code 视角）、`deep_dive_cx/`（Codex 视角，含完整架构图）
+如果任务明确针对旧目录，再回到 `deep_dive_cc/`、`deep_dive_cx/`、`deep_dive_gi/` 定点修改。

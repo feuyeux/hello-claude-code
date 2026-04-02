@@ -4,35 +4,60 @@ This file provides guidance for agentic coding agents working in this repository
 
 ## Project Overview
 
-This is a **reverse-engineered / decompiled** version of Anthropic's Claude Code CLI. The codebase has ~1341 tsc errors from decompilation — these do **not** block Bun runtime. Do not attempt to "fix" all tsc errors.
+This repository contains a **reverse-engineered / decompiled** version of Anthropic's Claude Code CLI plus a large documentation set around the codebase.
 
-- **Runtime**: Bun (not Node.js), requires >= 1.3.11
-- **Language**: TypeScript + TSX (React/Ink terminal UI)
-- **Module system**: ESM (`"type": "module"`)
-- **Monorepo**: Bun workspaces with internal packages in `packages/`
+- Runtime: Bun, requires `>= 1.3.11`
+- Language: TypeScript + TSX
+- UI: React + Ink terminal UI
+- Module system: ESM (`"type": "module"`)
+- Monorepo: Bun workspaces with internal packages in `packages/`
+
+The codebase still has many decompilation artifacts and roughly `1341` TypeScript errors. These do **not** block the Bun runtime. Do not try to “clean up” all type errors as part of unrelated work.
+
+## Workspace Layout
+
+```text
+hello-claude-code/
+├── claude-code/     # Source tree of the reconstructed Claude Code CLI
+├── deep_dive/       # Canonical integrated architecture / reverse-engineering docs
+├── deep_dive_cc/    # Legacy/source analysis docs
+├── deep_dive_cx/    # Legacy/source analysis docs
+├── deep_dive_gi/    # Legacy/source analysis docs
+└── doc/             # Other notes
+```
+
+## Documentation Guidance
+
+Use `deep_dive/` as the default target for architecture and reverse-engineering documentation work unless the user explicitly asks for one of the legacy directories.
+
+- `deep_dive/README.md` is the canonical index and reading map.
+- `deep_dive_cc/`, `deep_dive_cx/`, and `deep_dive_gi/` are historical/source variants, not the default publication target.
+- Write `deep_dive/` docs in Chinese, in a finished-reader voice. Do not write as if replying to the editor.
+- Keep topic ownership unique. If two chapters cover the same mechanism, choose one primary chapter and cross-reference it from the others.
+- In `deep_dive/`, use two-digit prefixes plus kebab-case names such as `07-context-management.md`.
+- Use Mermaid for flowcharts, sequence diagrams, and simple system diagrams. Use draw.io XML only when Mermaid is not expressive enough.
+- When adding, splitting, or moving a topic in `deep_dive/`, update `deep_dive/README.md` and any affected internal links in the same change.
+- If you are explicitly asked to edit `deep_dive_cc/`, `deep_dive_cx/`, or `deep_dive_gi/`, preserve that directory's existing filename convention instead of renaming files opportunistically.
 
 ## Build / Lint / Test Commands
 
-All commands run in the `claude-code/` directory:
+All code commands run in the `claude-code/` directory:
 
 ```bash
-bun install          # Install dependencies
-bun run dev          # Dev mode (direct execution via Bun)
-bun run build        # Build: outputs dist/cli.js (~25MB)
-bun run lint         # Biome lint check
-bun run lint:fix     # Biome lint with auto-fix
-bun run format       # Biome format (writes to files)
-bun test             # Run tests with Bun
-bun run check:unused # Check for unused dependencies (knip)
+bun install
+bun run dev
+bun run build
+bun run lint
+bun run lint:fix
+bun run format
+bun test
+bun run check:unused
 ```
 
 ### Running a Single Test
 
 ```bash
-# Run a specific test file
 bun test src/path/to/testFile.test.ts
-
-# Run tests matching a pattern
 bun test --test-name-pattern "tool.*"
 ```
 
@@ -40,102 +65,95 @@ bun test --test-name-pattern "tool.*"
 
 ### General Approach
 
-This codebase uses **Biome** for linting with a lenient configuration. Many rules are disabled to accommodate decompiled code patterns. Follow existing patterns in each file.
+This codebase uses Biome with a lenient configuration to accommodate decompiled code patterns. Follow existing patterns in each file instead of trying to normalize the entire repository.
 
 ### Formatting
 
-- **Formatter is DISABLED** (`formatter.enabled: false` in biome.json)
-- Indentation: Tabs
-- Line width: 120 characters
-- JavaScript quotes: Double quotes
+- Formatter is disabled in `biome.json`
+- Indentation: tabs
+- Line width: `120`
+- JavaScript / TypeScript quotes: double quotes
 
 ### TypeScript
 
-- **Strict mode is OFF** (`strict: false` in tsconfig.json)
-- **skipLibCheck is ON** — don't worry about third-party type errors
-- Common decompilation types: `unknown`, `never`, `{}` — these are normal
-- Path alias: `src/*` maps to `./src/*` — use imports like `import { ... } from 'src/utils/...'`
+- `strict` is off
+- `skipLibCheck` is on
+- Decompiled types like `unknown`, `never`, or `{}` are common and not automatically suspicious
+- Path alias: `src/*` maps to `./src/*`
 
-### Naming Conventions
+### React / Ink
 
-Follow existing patterns in each module. No strict enforced rules.
-
-### React/Ink Components
-
-- Components use React Compiler runtime — decompiled memoization boilerplate (`const $ = _c(N)`) is **normal**
-- This is a terminal UI using Ink (React for CLI), not web React
-
-### Imports
-
-- ESM imports: `import { x } from 'module'`
-- Internal path alias: `import { ... } from 'src/utils/...'`
-- `bun:bundle` import for feature flags works at build time; dev-time polyfill provided in `cli.tsx`
+- This is a terminal UI, not a browser app
+- React Compiler output such as `const $ = _c(N)` is normal decompilation boilerplate
 
 ## Special Code Patterns
 
 ### Feature Flag System
 
-All `feature('FLAG_NAME')` calls return `false` (polyfilled in `cli.tsx`). Any code behind a feature flag is **dead code** in this build. Do not attempt to enable feature flags.
+All `feature("FLAG_NAME")` calls return `false` in this build. Any code only reachable behind feature flags is effectively dead code. Do not try to enable or “repair” feature-flag branches unless the user explicitly asks for that.
 
 ### Stub Packages
 
-These packages return null/false/[] — they are stubs, not real implementations:
+These packages are stubs and should not be “implemented” as part of routine work:
+
 - `audio-capture-napi`
 - `image-processor-napi`
 - `modifiers-napi`
 - `url-handler-napi`
-- `@ant/*` packages
+- `@ant/*`
 
 ### Bundle API
 
-In `src/main.tsx` and other files, `import { feature } from 'bun:bundle'` works at build time. At dev-time, the polyfill in `src/entrypoints/cli.tsx` provides `feature()`.
+`import { feature } from "bun:bundle"` works at build time. In dev mode, the polyfill in `src/entrypoints/cli.tsx` provides `feature()`.
 
-## What NOT to Fix
+## What Not To Fix
 
-1. **Tsc errors** — ~1341 type errors from decompilation don't affect runtime
-2. **Feature flag branches** — always return false, code is dead
-3. **React Compiler memoization boilerplate** — `_c(N)` calls are normal decompilation output
-4. **Stub packages** — don't implement real functionality for stubbed modules
+1. Decompiled TypeScript errors that do not affect runtime.
+2. Dead feature-flag branches.
+3. React Compiler memoization scaffolding.
+4. Stub package behavior.
 
 ## File Organization
 
-```
+```text
 claude-code/
 ├── src/
-│   ├── entrypoints/     # CLI entry points (cli.tsx, init.ts)
-│   ├── commands/         # Slash commands (/xxx)
-│   ├── components/       # React/Ink UI components
-│   ├── screens/          # REPL screen and overlays
-│   ├── services/         # API, MCP, compact, oauth, plugins
-│   ├── state/            # AppState, Zustand store
-│   ├── tools/            # Tool implementations (BashTool, etc.)
-│   ├── ink/              # Custom Ink framework (reconciler, hooks)
-│   ├── utils/            # Utilities
-│   └── types/            # TypeScript type definitions
-├── packages/             # Internal monorepo packages
-│   └── @ant/             # Stub packages (Computer Use, Chrome MCP)
-└── dist/                 # Build output
+│   ├── entrypoints/   # CLI entry points
+│   ├── commands/      # Slash commands
+│   ├── components/    # React / Ink components
+│   ├── screens/       # REPL and overlays
+│   ├── services/      # API, MCP, compact, oauth, plugins
+│   ├── state/         # AppState and store
+│   ├── tools/         # Tool implementations
+│   ├── ink/           # Custom Ink framework
+│   ├── utils/         # Utilities
+│   └── types/         # Type definitions
+├── packages/
+│   └── @ant/          # Stub packages
+└── dist/              # Build output
 ```
 
 ## Git Commit Convention
 
-When committing code, add this co-author trailer:
+When committing code, add this trailer:
 
-```
+```text
 Co-authored-by: Claude <claude@anthropic.com>
 ```
 
 ## Architecture Summary
 
-```
-CLI Entry → commands/ → QueryEngine → query.ts → tools.ts → services/api/
-                                                        ↓
-                                              tools/ (BashTool, etc.)
+```text
+CLI Entry -> commands/ -> QueryEngine -> query.ts -> tools.ts -> services/api/
+                                                       ↓
+                                             tools/ (BashTool, etc.)
 ```
 
-- `src/main.tsx` — Commander.js CLI, parses args, launches REPL or pipe mode
-- `src/query.ts` — Main API query loop (streaming, tool calls, conversation turns)
-- `src/QueryEngine.ts` — Orchestrator managing state, compaction, attribution
-- `src/screens/REPL.tsx` — Interactive terminal UI (5000+ lines)
-- `src/services/api/claude.ts` — API client (Anthropic/Bedrock/Vertex/Azure)
-- `src/tools.ts` — Tool registry, assembles tools by permission context
+- `src/main.tsx`: CLI definition and launch routing
+- `src/query.ts`: main streaming query loop
+- `src/QueryEngine.ts`: headless/session orchestrator
+- `src/screens/REPL.tsx`: interactive terminal control center
+- `src/services/api/claude.ts`: provider-specific API client
+- `src/tools.ts`: tool pool assembly by permission context
+
+For the integrated code-reading map, start with `deep_dive/README.md`.
