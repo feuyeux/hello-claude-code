@@ -1,6 +1,6 @@
 # 扩展体系：技能、插件与 MCP
 
-本文分析技能、插件与 MCP 如何直接并入命令总线和工具总线。
+本篇梳理技能、插件与 MCP 如何直接并入命令总线和工具总线。
 
 ## 1. 这套工程为什么扩展能力这么强
 
@@ -84,7 +84,7 @@
 - `agent`
 - `effort`
 
-这说明：
+结论如下：
 
 - 技能不是另一套 DSL。
 - 技能就是一种特殊来源的 prompt command。
@@ -108,7 +108,7 @@
 - MCP skills 是 remote and untrusted
 - 不允许执行其 Markdown 里的 inline shell commands
 
-这说明技能扩展虽强，但系统明确区分本地可信技能与远程不可信技能。
+技能扩展虽强，但系统明确区分本地可信技能与远程不可信技能。
 
 ## 4. 动态技能发现不是启动时一次性完成
 
@@ -133,7 +133,7 @@
 - 当用户对某些文件进行操作时，系统把文件路径喂给 `activateConditionalSkillsForPaths(...)`
 - 命中的 skill 会被移入 dynamic skills
 
-这说明技能系统不仅是“手动 `/skill` 调用”，还是一种：
+技能系统不仅是“手动 `/skill` 调用”，还是一种：
 
 > 基于当前工作集的条件化提示词注入系统
 
@@ -197,7 +197,7 @@
 
 关键文件：`src/services/mcp/client.ts`
 
-从搜索结果可以看到它同时支持多种 transport：
+代码中显式支持多种 transport：
 
 - `stdio`
 - `sse`
@@ -226,7 +226,7 @@
    - REPL 模式则排入 `AppState.elicitation.queue`
 3. 用户或 hook 接受后重试 tool call
 
-这说明 MCP 工具调用并不是“一次函数调用”，而可能插入新的用户交互。
+MCP 工具调用并不是“一次函数调用”，而可能插入新的用户交互。
 
 ## 8.2 普通 MCP tool call 还带 timeout、progress、auth/session 恢复
 
@@ -240,7 +240,7 @@
 - 处理 401 -> `McpAuthError`
 - 处理 session expired -> 清缓存并抛 `McpSessionExpiredError`
 
-这说明 MCP 客户端层不仅接协议，还负责连接生命周期治理。
+MCP 客户端层不仅接协议，还负责连接生命周期治理。
 
 ## 9. SDK 模式下还支持 in-process MCP
 

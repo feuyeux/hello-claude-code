@@ -1,6 +1,6 @@
 # 多代理、后台任务与远程会话
 
-本文分析子代理、后台任务与远程会话如何通过 `AgentTool` 接入统一运行时。
+本篇梳理子代理、后台任务与远程会话如何通过 `AgentTool` 接入统一运行时。
 
 ## 1. Agent 在这套系统里的真实地位
 
@@ -12,7 +12,7 @@
 - 子代理再运行自己的 `query()`。
 - 后台任务、远程任务、worktree 隔离、权限模式都是围绕这一工具调用展开。
 
-所以这篇分析的主线是：
+主线如下：
 
 `AgentTool -> runAgent -> LocalAgentTask / RemoteSessionManager`
 
@@ -208,7 +208,7 @@ fork path 的设计目标是：
 - 解析 effort override
 - 解析最终工具池
 
-说明：
+结论如下：
 
 - 子代理不是简单共享父代理全部权限。
 - 它有自己独立的权限视图。
@@ -232,7 +232,7 @@ fork path 的设计目标是：
 - 执行 `SubagentStart` hooks，追加额外上下文
 - 注册 agent frontmatter hooks
 
-这说明子代理也是 hook 生命周期中的一级实体。
+子代理也是 hook 生命周期中的一级实体。
 
 ## 10.4 预加载技能与 agent-specific MCP
 
@@ -247,7 +247,7 @@ fork path 的设计目标是：
 - 初始化 agent 专属 MCP servers
 - 合并 agent MCP tools 与 resolved tools
 
-这说明 agent 不是单纯“换个 prompt”，而是能带自己的技能与外部能力环境。
+agent 不是单纯“换个 prompt”，而是能带自己的技能与外部能力环境。
 
 ## 10.5 最终还是调用 `query()`
 
@@ -433,7 +433,7 @@ fork path 的设计目标是：
 - `isUltraplan`
 - `ultraplanPhase`
 
-这说明 `/ultraplan` 不是普通 slash command 包了一层 prompt，而是独立的远程任务类型。
+`/ultraplan` 不是普通 slash command 外包一层 prompt，而是独立的远程任务类型。
 
 ### 12.5 `/ultrareview` 是 remote bughunter 路径，和 `/review` 不是一回事
 
@@ -514,7 +514,44 @@ flowchart TB
 
 这让本地与远程之间可以共用大量上层逻辑。
 
-## 15. 关键源码锚点
+## 15. `Cross-Agent Communication` 的源码归类
+
+在一些概览图中，`Cross-Agent Communication` 会被放在所谓“第七层记忆”的末端。按源码口径，它更准确的归类不是 memory，而是：
+
+> **协作 / 通信平面**
+
+### 15.1 实际上有三条不同通道
+
+1. **coordinator -> worker 的任务通知通道**  
+   `LocalAgentTask.tsx` 会把完成/失败结果包装成 `<task-notification>`，再以 `task-notification` queued command 形式回灌；`query.ts` 只会把属于当前 agent 的通知 drain 给对应 worker。
+
+2. **显式 agent / teammate 消息通道**  
+   `SendMessageTool` 通过 `agentNameRegistry`、mailbox、`queuePendingMessage()` 把消息路由到指定 teammate 或本地 agent；接收侧再通过 `drainPendingMessages()` / attachment 注入取到消息。
+
+3. **跨 session 的 peer 通道**  
+   `SendMessageTool/prompt.ts` 还支持 `uds:` 和 `bridge:` 地址，消息会包成 `<cross-session-message from="...">`，这已经超出了单个 multi-agent team 的范围。
+
+### 15.2 “共享 cache 前缀”不等于“共享状态”
+
+外部图里还有一句很重要的话：“状态隔离，但共享 cache 前缀”。这在源码里基本成立，但要拆开理解：
+
+- fork path 会继承父线程的 system prompt 和 exact tools，目标是 `cache-identical prefix`
+- 但每个 agent 仍然有自己的：
+  - message array
+  - transcript/sidechain
+  - permission context
+  - task lifecycle
+
+真正的共享必须走显式通道，例如：
+
+- `SendMessage`
+- `<task-notification>`
+- coordinator scratchpad（开启时）
+- team context / remote bridge
+
+因此，`Cross-Agent Communication` 更适合被理解为多代理 runtime 的总线，而不是 recall / memory layer。将其并入 memory stack，会把协作机制与持久化机制混成一类。
+
+## 16. 关键源码锚点
 
 | 主题 | 代码锚点 | 说明 |
 | --- | --- | --- |
@@ -531,7 +568,7 @@ flowchart TB
 | `/ultraplan` | `src/commands/ultraplan.tsx:1-240` | 30 分钟远程 planning 与 phase 轮询 |
 | `/ultrareview` | `src/commands/review.ts`, `src/commands/review/reviewRemote.ts` | 本地 review 与远程 bughunter 的分叉 |
 
-## 16. 总结
+## 17. 总结
 
 多代理体系的核心设计是：
 

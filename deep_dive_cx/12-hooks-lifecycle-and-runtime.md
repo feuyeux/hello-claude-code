@@ -1,6 +1,6 @@
 # Hooks 生命周期与运行时语义
 
-本文分析 hooks 的来源、执行方式以及独立的安全和运行时约束。
+本篇梳理 hooks 的来源、执行方式以及独立的安全和运行时约束。
 
 ## 1. 为什么 hooks 需要单独成篇
 
@@ -49,7 +49,7 @@
 - `Elicitation`
 - `ElicitationResult`
 
-这说明 hooks 已经覆盖了：
+hooks 已经覆盖了：
 
 - 用户输入前后
 - 工具调用前后
@@ -97,7 +97,7 @@
 - `strictPluginOnlyCustomization`：阻断 user/project/local settings hooks，但 plugin hooks 不受这个 execution-time 过滤影响
 - 非 managed settings 的 `disableAllHooks=true`：只能禁用非 managed hooks，managed hooks 仍然保留
 
-这说明 hooks 子系统的安全模型明显高于一般配置项：
+hooks 子系统的安全模型明显高于一般配置项：
 
 > 非托管配置不能完全关闭托管 hooks，也不能随意越权影响插件/策略层的 hook 通道。
 
@@ -236,7 +236,7 @@ HTTP hook 的设计明显比 shell hook 更谨慎：
 - 直接运行 TypeScript callback
 - 不能被序列化成普通 HookMatcher
 
-这说明 hooks 子系统既支持持久配置，也支持：
+hooks 子系统既支持持久配置，也支持：
 
 > 仅为当前会话或当前代理临时挂上的内存态运行时约束。
 
@@ -268,7 +268,7 @@ HTTP hook 的设计明显比 shell hook 更谨慎：
 - 发 hook started / progress / response 事件
 - 在后台完成时回传 stdout/stderr/outcome
 
-这说明 hook 在系统里也是可观测对象，而不是“黑盒外部进程”。
+hook 在系统里也是可观测对象，而不是“黑盒外部进程”。
 
 ## 14. `ConfigChange`、`CwdChanged`、`FileChanged` 说明 hooks 还能反过来塑造运行环境
 

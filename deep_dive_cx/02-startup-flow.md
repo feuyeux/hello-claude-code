@@ -1,6 +1,6 @@
 # 启动流程详解
 
-本文分析 Claude Code CLI 从进程启动到会话可交互之间的阶段划分、trust 边界和交互/非交互分流。
+本篇拆解 Claude Code CLI 从进程启动到会话可交互之间的阶段划分、trust 边界和交互/非交互分流。
 
 ## 1. 总体时序图
 
@@ -189,7 +189,7 @@ sequenceDiagram
 - UDS server 要在任何 hook 运行前就绑定好。
 - 因为 SessionStart hook 之类的逻辑可能立即读取 `process.env`。
 
-这说明启动顺序并不是随意排列，而是被 hooks 生态倒逼出来的。
+启动顺序并不是随意排列，而是被 hooks 生态倒逼出来的。
 
 ## 6.4 终端恢复逻辑说明这是一个“侵入式终端产品”
 
@@ -223,7 +223,7 @@ sequenceDiagram
 - 必须先设置 cwd。
 - 否则 hooks 会从错误目录加载。
 
-这说明 hooks 系统高度依赖项目目录，并且 setup 已经把“项目根上下文”当成所有后续逻辑的基础。
+hooks 系统高度依赖项目目录，setup 也已经把“项目根上下文”当成所有后续逻辑的基础。
 
 ## 6.6 worktree 是 setup 的一级公民
 
@@ -271,7 +271,7 @@ sequenceDiagram
 
 - `void getCommands(getProjectRoot())`
 
-说明：
+结论如下：
 
 - 命令加载成本不低。
 - 插件/技能/工作流的命令来源比较复杂。
@@ -292,7 +292,7 @@ sequenceDiagram
 
 顺序是：
 
-1. `initSinks()` 先把 error/analytics sink 挂上。
+1. `initSinks()` 挂载 error/analytics sink。
 2. 立刻发 `tengu_started`。
 
 注释说得很清楚：
@@ -300,7 +300,7 @@ sequenceDiagram
 - 这是 session success rate 的分母事件。
 - 必须在任何可能抛错的复杂逻辑之前尽早发送。
 
-这类代码体现了生产系统思维，而不是纯功能思维。
+这类代码体现出明确的生产系统思维，而不是纯功能思维。
 
 ## 8. 阶段 5：交互模式下创建 Ink root 与 setup screens
 
@@ -313,7 +313,7 @@ sequenceDiagram
 3. `root = await createRoot(...)`
 4. `showSetupScreens(...)`
 
-这个顺序说明：
+顺序清楚表明：
 
 - 要先创建终端渲染上下文。
 - 再显示 onboarding/trust 等 setup screens。
@@ -374,7 +374,7 @@ sequenceDiagram
 - 懒加载 `REPL`
 - 用 `<App><REPL /></App>` 组合之后交给 `renderAndRun()`
 
-这说明入口层与 UI 层的边界还是清晰的：
+入口层与 UI 层的边界仍然清晰：
 
 - 启动决策在 `main.tsx`
 - 渲染包装在 `replLauncher.tsx`

@@ -1,6 +1,6 @@
 # 设置系统、托管策略与环境变量注入
 
-本文分析 `settings` 如何通过多源合并、托管策略和 trust 前后分阶段注入影响运行时行为。
+本篇梳理 `settings` 如何通过多源合并、托管策略和 trust 前后分阶段注入影响运行时行为。
 
 ## 1. 为什么这是一条独立主线
 
@@ -170,7 +170,7 @@
 - 清掉 CA cert / mTLS / proxy cache
 - 重新配置 global agents
 
-这说明 trust 不只是 UI gating，而是：
+trust 不只是 UI gating，而是：
 
 > 决定是否允许项目级配置去影响真实运行环境。
 
@@ -207,7 +207,7 @@
 - Claude Code 自己写 settings 时，watcher 不应再把它当成外部变更。
 - 编辑器/自动更新常见的“先删再原子替换”模式，不应被误报成删除。
 
-这说明 settings 变更链路已经从“能跑”推进到“要在真实编辑器和真实文件系统行为下稳定运行”。
+settings 变更链路已经从“能跑”推进到“要在真实编辑器和真实文件系统行为下稳定运行”。
 
 ## 10. 某些设置读取会故意绕开 project settings
 
@@ -224,7 +224,7 @@
 
 > 恶意项目不应通过共享 project config 自动接受危险权限对话框或 auto mode opt-in。
 
-这说明 settings 并不是单纯消费 merge 结果，而是：
+settings 并不是单纯消费 merge 结果，而是：
 
 - 某些行为读 merged settings
 - 某些安全决策只信任 user/local/flag/policy
@@ -251,7 +251,77 @@ flowchart LR
     K --> L[reset cache / subscribe updates]
 ```
 
-## 12. 关键源码锚点
+## 12. 一组常见 env 配置的源码解读
+
+如下配置可视为一组偏保守、偏隐私的 runtime profile：
+
+```json
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true",
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
+    "DISABLE_EXTRA_USAGE_COMMAND": "1"
+  }
+}
+```
+
+边界首先需要明确：这不是 Claude Code 的“默认推荐配置”，也不是一组纯性能开关。  
+更准确的归类是 **偏隐私、偏保守、减少非必要表面积** 的 runtime profile。
+
+逐项落到代码，比较可靠的解释如下：
+
+| 变量 | 关键源码 | 直接效果 | 更准确的利弊 |
+| --- | --- | --- | --- |
+| `ENABLE_TOOL_SEARCH=true` | `src/utils/toolSearch.ts` | 强制走 `tst` 模式，deferred tools 通过 Tool Search 按需发现 | 主上下文里不必内联全部 deferred tool 描述，通常有利于 prompt 体积和 cache；但前提是当前 provider / gateway 支持 `tool_reference` |
+| `CLAUDE_CODE_DISABLE_1M_CONTEXT=1` | `src/utils/context.ts` | 禁用 `[1m]` / 1M context 路径，context window 回到默认 200K 语义 | 降低长上下文成本、满足某些合规约束；代价是丢掉超长上下文 headroom |
+| `CLAUDE_CODE_ATTRIBUTION_HEADER=0` | `src/constants/system.ts` | 不发送 `x-anthropic-billing-header` attribution header | 更少客户端标识信息；但会关掉 first-party attribution 相关信号 |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` | `src/services/mcp/officialRegistry.ts`、`src/utils/privacyLevel.ts` | 禁掉非必要网络流量，例如官方 MCP registry 预取 | 更隐私、更少出网；代价是某些体验型预热信息不再可用 |
+| `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` | `src/main.tsx`、`src/utils/gracefulShutdown.ts` | 不设置 / 不恢复终端标题 | 主要是终端整洁度和 shell 习惯问题，几乎不影响核心能力 |
+| `DISABLE_EXTRA_USAGE_COMMAND=1` | `src/commands/extra-usage/index.ts` | 隐藏 `extra-usage` 命令入口 | 这是命令面板/能力入口收敛，不是性能优化 |
+
+### 12.1 成本、隐私与产品表面积需要分开看
+
+更接近源码事实的拆法如下：
+
+- **偏成本 / cache / prompt 体积**：`ENABLE_TOOL_SEARCH`、`CLAUDE_CODE_DISABLE_1M_CONTEXT`
+- **偏隐私 / 减少出网**：`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`、`CLAUDE_CODE_ATTRIBUTION_HEADER`
+- **偏 UI / 产品表面积收敛**：`CLAUDE_CODE_DISABLE_TERMINAL_TITLE`、`DISABLE_EXTRA_USAGE_COMMAND`
+
+因此，把这组配置概括成“提速配置”会失真。它更像：
+
+> 让客户端行为更保守、更少暴露、上下文上限更克制的一组偏好
+
+### 12.2 如果这些键写在 `settings.json` 的 `env` 里，它们还不是同一时刻生效
+
+这一点很容易被忽略。
+
+`managedEnv.ts` 明确把 env 注入拆成两阶段：
+
+- `applySafeConfigEnvironmentVariables()`：trust 前，只注入 `SAFE_ENV_VARS`
+- `applyConfigEnvironmentVariables()`：trust 后，才把 merged settings 里的 env 全量写进 `process.env`
+
+结合 `managedEnvConstants.ts` 可以看到：
+
+- `ENABLE_TOOL_SEARCH`
+- `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
+- `CLAUDE_CODE_DISABLE_TERMINAL_TITLE`
+
+属于 safe allowlist，更容易在 trust 前就影响运行时。
+
+而下面这些则不在那份 safe allowlist 里：
+
+- `CLAUDE_CODE_DISABLE_1M_CONTEXT`
+- `CLAUDE_CODE_ATTRIBUTION_HEADER`
+- `DISABLE_EXTRA_USAGE_COMMAND`
+
+如果它们来自 `settings.json` 的 `env`，更接近 **trust 后全量 env 生效** 的路径。
+
+这组配置展示的不是“一组同时翻转的启动开关”，而是一个跨 trust 边界的 runtime profile。
+
+## 13. 关键源码锚点
 
 | 主题 | 代码锚点 | 说明 |
 | --- | --- | --- |
@@ -265,7 +335,7 @@ flowchart LR
 | 文件变化处理 | `src/utils/settings/changeDetector.ts:268-344` | reset cache + ConfigChange hooks |
 | MDM 轮询 | `src/utils/settings/changeDetector.ts:381-430` | registry/plist 变化需要 poll |
 
-## 13. 总结
+## 14. 总结
 
 这套 settings 系统的核心不是“读配置文件”，而是：
 

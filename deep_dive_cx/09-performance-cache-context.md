@@ -1,6 +1,6 @@
-# 性能、缓存与上下文治理专题
+# 性能、缓存与长会话稳定性专题
 
-本文汇总启动性能、prompt cache、上下文治理、资源释放与长会话稳定性相关的工程设计。
+本篇收拢启动性能、prompt cache、资源释放与长会话稳定性相关的工程设计。
 
 ## 1. 问题范围
 
@@ -13,7 +13,7 @@
 - 上下文膨胀导致的请求失败
 - streaming 与工具执行带来的资源泄露
 
-因此，这篇专题的目标是把散落在各处的“工程性设计”串起来。
+下文将把散落在各处的“工程性设计”收拢为一条可追踪的主线。
 
 ## 2. 启动性能：把工作拆成三个窗口
 
@@ -61,7 +61,7 @@
 
 推迟到首屏之后。
 
-### 2.3.1 这说明项目的性能优化目标很明确
+### 2.3.1 性能优化目标的边界
 
 它区分了：
 
@@ -90,7 +90,7 @@
 
 所以它刻意使用 content-hash-based path。
 
-这类代码很能代表全工程的工程哲学：
+这类代码集中体现了全工程的工程哲学：
 
 > 任何会污染 prompt 前缀的“看似无关细节”都值得修正。
 
@@ -121,232 +121,17 @@
 
 这说明团队并不只“希望缓存命中”，而是把缓存失效当作可观测故障来监控。
 
-## 4. 上下文治理不是单一压缩，而是梯度体系
+## 4. 上下文治理已独立成篇
 
-关键代码：`src/query.ts:396-468`
+上下文治理的完整展开已经单独整理为：
 
-系统对上下文的处理顺序是：
+- [17-context-management.md](./17-context-management.md)
 
-1. tool result budget
-2. `snip`
-3. `microcompact`
-4. `context collapse`
-5. `autocompact`
-6. 之后还有 reactive compact 参与恢复
+本篇只保留与性能和稳定性直接相关的三条结论：
 
-## 4.1 梯度图
-
-```mermaid
----
-config:
-  theme: neutral
----
-flowchart LR
-    A[原始 messages] --> B[tool result budget]
-    B --> C[snip]
-    C --> D[microcompact]
-    D --> E[context collapse]
-    E --> F[autocompact]
-    F --> G[必要时 reactive compact / overflow recovery]
-```
-
-### 4.1.1 运行顺序不是“四层同时工作”
-
-“四种不同粒度的压缩机制在同时工作”并不准确。更接近源码事实的表述如下：
-
-- 这是 **按顺序尝试的梯度体系**，不是每一轮都四层全开。
-- `snip` 和 `microcompact` 的确可能在同一轮都运行。
-- `microcompact` 自己又分成互斥的两条活路径：time-based content clearing 和 cached microcompact。
-- `context collapse` 会在 `autocompact` 前运行，但当 collapse runtime 真正启用时，`autoCompact.ts` 会 suppress proactive autocompact，让 collapse 自己接管 headroom 管理。
-- 严格说，这四层前面还有一层 `tool result budget`，只是它更像“结果尺寸裁剪”，还不是完整的上下文折叠策略。
-
-需要同时明确一个反编译边界：
-
-- `src/services/compact/snipCompact.ts`
-- `src/services/compact/snipProjection.ts`
-- `src/services/contextCollapse/*`
-
-这几块在当前仓库里是 stub。下面关于 `snip` / `context collapse` 的分析，部分结论来自 `query.ts`、`sessionStorage.ts`、`/context`、`QueryEngine.ts` 的调用点和注释，而不是完整实现体。
-
-### 4.1.2 “三层压缩，让对话永不超限”怎么改写才更贴源码
-
-这一表述抓住了一部分真实设计，但还不够严谨。更接近源码的表述如下：
-
-- 如果只看最常见的重手段链路，可以口语化概括成 `microcompact -> autocompact -> legacy full compact summary`
-- 但 `query.ts` 的真实顺序前面还有 `tool result budget` 和可选 `snip`
-- 中间还有 `context collapse` 这条更强的结构化路径；当它启用时，proactive autocompact 会被 suppress
-- `autocompact` 自己也不是单层动作，而是“先试 `SessionMemory compact`，失败后再退到 `compactConversation()`”
-
-另外，“让对话永不超限”更适合当产品层描述，不适合当代码级结论。源码真正实现的是：
-
-- 预防式压缩
-- 失败熔断
-- overflow 后的 reactive recovery
-- compact 请求自身 prompt-too-long 时的重试与截断补救
-
-这些机制在工程上尽量把会话做成“可持续”，但并不构成数学意义上的绝对不超限保证。
-
-## 4.2 `snip` 的角色
-
-它是轻量级、偏“先切一点历史”的策略。
-
-优点：
-
-- 成本低
-- 对当前上下文侵入较小
-
-如果把它再落到代码层，能确认的是：
-
-- `query.ts` 里直接调用 `snipCompactIfNeeded(messagesForQuery)`，返回新的 `messages`、`tokensFreed` 和可选的 boundary message。
-- `snipTokensFreed` 会一路传进 `autoCompactIfNeeded()` 和 blocking-limit 判断，专门抵消 `tokenCountWithEstimation()` 看不到的那部分释放量。
-- `sessionStorage.ts` 的 `applySnipRemovals()` 注释写得非常明确：snip 不是像 `compact_boundary` 那样截一个 prefix，而是 **删除中间区段**，并在 resume 时重连 parentUuid。
-- `utils/messages.ts` 默认会对 API 视图调用 `projectSnippedView()`；REPL scrollback 可以保留全量消息，但送给模型的默认视图要把被 snip 的消息滤掉。
-- `QueryEngine.ts` 还说明了另一层差异：REPL 为了 UI 会保留全 history，headless/SDK 路径则会在 replay 后直接裁剪 mutable store，避免无 UI 长会话持续占内存。
-
-代码可以确认 `HISTORY_SNIP` 属于“最细粒度、直接删消息、不做摘要”的机制；但当前仓库缺少 `snipCompact.ts` 正文，因此具体筛选规则仍不完整。
-
-## 4.3 `microcompact` 的角色
-
-它更偏向：
-
-- 对特定 tool results 做细粒度压缩
-- 某些场景使用 cached microcompact / cache editing
-
-这比整段摘要更精细，也更利于 prompt cache 复用。
-
-这里需要把两种完全不同的实现分开：
-
-### 4.3.1 time-based microcompact：会直接改消息
-
-`microCompact.ts` 的 `maybeTimeBasedMicrocompact()` 在 cache 冷掉时触发：
-
-- 判定条件是“距离上一次 assistant 消息已经超过阈值”，默认语义就是 1h cache TTL 已过。
-- 它会保留最近 `N` 个 compactable tool result，把更老的那些直接改成 `[Old tool result content cleared]`。
-- 这是 **内容级压缩**，不是 cache 层编辑。
-
-### 4.3.2 cached microcompact：不改本地消息，改 API cache 视图
-
-cached path 则完全不同：
-
-- 只在主线程、支持的模型、`CACHED_MICROCOMPACT` 打开时可用。
-- `microCompact.ts` 只负责收集要删的 `tool_use_id`，把 `pendingCacheEdits` 暂存起来。
-- `services/api/claude.ts` 的 `addCacheBreakpoints()` 才会真正把 `cache_edits` block 和 `cache_reference` 塞进请求体。
-- API 返回后，`query.ts` 再根据 usage 里的 `cache_deleted_input_tokens` 计算这次实际删掉了多少 token，并补发 microcompact boundary。
-
-因此，microcompact 不能统一描述为“它不改消息内容，只是告诉 API 这些 token 别用了”。代码上应区分为：
-
-- cached microcompact：是
-- time-based microcompact：不是
-
-另外，`cache_deleted_input_tokens` 也不是机制本身，而是 **API 返回的统计结果**。
-
-## 4.4 `context collapse` 的角色
-
-它不是简单生成一条摘要消息，而是维护一种 collapse store / projection 视图。
-
-优势在于：
-
-- 对长会话更稳定
-- 可在多轮中持续重用 collapse 结果
-
-这部分从周边代码能看到几个关键事实：
-
-- `query.ts` 注释明确说：summary messages 不在 REPL array 里，而是在 collapse store；每次 turn 入口重新 `projectView()`。
-- `commands/context/context.tsx` 和 `context-noninteractive.ts` 都把 `projectView()` 当作“得到模型真实视图”的必要步骤；否则 `/context` 会严重高估 token。
-- `sessionStorage.ts` 会把 context collapse 的 commit 和 snapshot 以 `marble-origami-commit` / snapshot entry 写进 transcript，并在 resume 时重建这套提交历史。
-- overflow 恢复时，`query.ts` 还会先调用 `contextCollapse.recoverFromOverflow()` 去 drain staged collapses，再决定要不要走 reactive compact。
-
-“像 git log 一样维护结构化归档并在每轮重放”这一类比有依据，代码上的准确描述是：
-
-> 类似 commit log 的 collapse store + 每轮投影视图
-
-当前仓库尚未还原出完整实体实现。
-
-更重要的一点是：它和 autocompact 不是并列兜底。`autoCompact.ts` 明确写了，开启 context collapse 后，**proactive autocompact 会被压掉**，因为 collapse 被视为新的主 context-management system。
-
-## 4.5 `autocompact` 的角色
-
-它是更强的一步：
-
-- 当 token 窗口真正逼近阈值时，生成 post-compact messages
-
-这是重手段。
-
-但如果把它说成“最后调一次模型把整个历史压成一段话”，会低估它的真实复杂度。
-
-从 `autoCompact.ts` 和 `compact.ts` 看，autocompact 实际上有两层：
-
-1. 先试 `trySessionMemoryCompaction()`
-2. 失败后再走 `compactConversation()`
-
-### 4.5.1 触发条件是“effective window - 13,000”，不是固定 87%
-
-源码常量是：
-
-- `AUTOCOMPACT_BUFFER_TOKENS = 13_000`
-- `MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3`
-
-但触发阈值不是写死的 87%。真实公式在 `autoCompact.ts`：
-
-1. `getEffectiveContextWindowSize(model)`  
-   先从 `getContextWindowForModel(model)` 开始，再减去 `reservedTokensForSummary`
-2. `getAutoCompactThreshold(model)`  
-   再从这个 effective window 里减去 `13_000`
-
-其中 `reservedTokensForSummary` 又来自：
-
-- `min(getMaxOutputTokensForModel(model), 20_000)`
-
-所以，“接近上下文窗口 87%”不是稳定事实；真正稳定的只有：
-
-> **autocompact 在 effective context window 的基础上预留 13,000 token buffer**
-
-这个 effective window 还会受模型 context size、1M mode、max output cap、环境变量 override 影响，因此百分比会漂移。
-
-### 4.5.2 确实有一个 3 次失败的熔断器
-
-这一点在 `autoCompactIfNeeded()` 里写得非常明确：
-
-- `tracking.consecutiveFailures >= 3` 时，直接停止后续 proactive autocompact 尝试
-- compact 成功一次后，失败计数清零
-- 失败时会把 `nextFailures` 回传给 `query.ts`，由 query loop 继续线程内状态
-
-这不是一个 UI 层提示，而是实际控制分支，目的是防止 irrecoverable prompt-too-long 场景里每一轮都白打一遍 compact 请求。
-
-### 4.5.3 `NO_TOOLS_PREAMBLE` 属于 legacy compact summary 路径
-
-“完全压缩——AI 总结 `NO_TOOLS_PREAMBLE`”这一描述需要限定作用域。
-
-准确说法是：
-
-- `NO_TOOLS_PREAMBLE` 定义在 `src/services/compact/prompt.ts`
-- `getCompactPrompt()` / `getPartialCompactPrompt()` 会把它拼到 compact summarizer prompt 最前面
-- `compactConversation()` 用这个 prompt 生成 `summaryRequest`
-- `streamCompactSummary()` 再把 `summaryRequest` 发给模型
-- forked-agent cache-sharing 路径还会通过 `createCompactCanUseTool()` 直接 deny 所有 tool use
-
-因此，`NO_TOOLS_PREAMBLE` 确实是“模型总结式完全压缩”的关键一环，但它只覆盖 **legacy compactConversation**，不覆盖前面那条 `SessionMemory compact` 快路径。
-
-第一层并不调用新的 compact summarizer，而是：
-
-- 读取现有 session memory
-- 结合 `lastSummarizedMessageId` 保留最近消息尾部
-- 构造 compact boundary + session memory summary + 少量附件
-
-第二层的传统 compact 也不是“单段摘要”：
-
-- 它会调用专门的 compact prompt，让模型输出结构化 summary
-- 然后再组装 `boundaryMarker`、`summaryMessages`、post-compact file attachments、plan attachment、MCP/tool delta attachments、session start hooks、post-compact hooks
-
-因此，autocompact 更准确的代码级定义是：
-
-> 最后的重型上下文重写机制，但产物是“新的 post-compact 上下文包”，不是单纯一段话。
-
-## 4.6 reactive compact / overflow recovery
-
-这类恢复策略会在真实 API overflow 或 prompt-too-long 后参与补救。
-
-系统同时包含预防式压缩和失败后的恢复式压缩。
+1. `tool result budget -> snip -> microcompact -> context collapse -> autocompact -> reactive compact` 是一条按顺序尝试的梯度体系，而不是每轮都全部生效的并行机制。
+2. `microcompact`、`context collapse`、`autocompact` 与 prompt cache、内存占用、resume 正确性彼此耦合，因此它们同时属于上下文治理问题和性能问题。
+3. `context collapse` 启用后会 suppress proactive autocompact；`autocompact` 命中后又会先试 `SessionMemory compact`，这说明长会话稳定性依赖的是整条治理流水线，而不是单个压缩器。
 
 ## 5. REPL 层对内存与 GC 非常敏感
 
@@ -423,12 +208,52 @@ cached path 则完全不同：
 - 对 compact boundary 前的 preserved tail 做提前 flush
 - 在结果返回前做最后 flush
 
-这说明 transcript 不是“顺便记一下”，而是会直接影响：
+transcript 不是“顺便记一下”，而是会直接影响：
 
 - resume 正确性
 - SDK 进程被上层杀掉时的数据完整性
 
-## 9. 这套系统的性能设计关键词
+## 9. `cache-safe request shaping` 的源码展开
+
+源码层面最稳定的结论不是“某个神秘 cache trick”，而是：
+
+> Claude Code 在多个层面同时做 **byte-stable request shaping**
+
+### 9.1 真正会影响 cache key 的四组工程手段
+
+1. **system prompt 分段与边界稳定化**  
+   `SYSTEM_PROMPT_DYNAMIC_BOUNDARY`、`systemPromptSection(...)`、`splitSysPromptPrefix(...)` 共同把静态前缀和动态尾部切开，尽量让可缓存部分跨 turn 保持不变。
+
+2. **动态 beta / header 的 sticky-on latch**  
+   `claude.ts` 里对 AFK、fast mode、cache editing、thinking clear 都做了 sticky-on 处理。目的不是“记住用户偏好”，而是避免 session 中途 header 翻来覆去，直接打爆 server-side cache key。
+
+3. **把高抖动能力信息从主前缀里挪走**  
+   `defer_loading` + `tool_reference`、MCP instructions delta、defer-loading 工具从 cache hash 中排除，这些都属于“不要让晚到的工具/说明重写整个 prompt 前缀”。
+
+4. **让子代理和配置路径也尽量保持字节稳定**  
+   - `main.tsx` 用 content-hash temp path 固定 `--settings` 临时文件名  
+   - fork subagent 继承父 system prompt + exact tools 以保持 `cache-identical prefix`  
+   - `promptCacheBreakDetection.ts` 专门监控 cache break 是否来自 system / tools / betas / extra body
+
+这四组机制合起来，构成了 Claude Code 的 cache-safe request shaping。
+
+### 9.2 `200K` / `20K` / “字节级一致”的源码落点
+
+相关数字与表述更准确地归属于上下文治理专题：
+
+- `200K` 对应 [`src/utils/context.ts`](../claude-code/src/utils/context.ts) 里的 `MODEL_CONTEXT_WINDOW_DEFAULT = 200_000`，也就是默认上下文窗口上限。
+- `20K` 对应 [`src/services/compact/autoCompact.ts`](../claude-code/src/services/compact/autoCompact.ts) 里的 `MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20_000`，这是 compaction summary 的预留输出预算，不是通用 memory 配额。
+- “字节级一致”不是一句抽象口号，而是多处显式工程约束的合称：
+  - system prompt 边界前后分块
+  - sticky-on headers
+  - content-hash 临时 settings 路径
+  - fork child 继承 exact tools / exact prompt
+  - defer-loading 工具不参与 cache break hash
+
+所以，如果只用一句“Claude Code 很重视 prompt cache”来概括，会漏掉它真正的实现方式：  
+它不是依赖单点缓存，而是在 **system prompt、tool schema、headers、attachments、subagent fork、临时文件路径** 上同时做稳定化。
+
+## 10. 这套系统的性能设计关键词
 
 可以总结为：
 
@@ -441,7 +266,7 @@ cached path 则完全不同：
 - 显式资源释放
 - 埋点可观测
 
-## 10. 关键源码锚点
+## 11. 关键源码锚点
 
 | 主题 | 代码锚点 | 说明 |
 | --- | --- | --- |
@@ -454,7 +279,7 @@ cached path 则完全不同：
 | REPL 内存控制 | `src/screens/REPL.tsx:2608-2627`, `3537-3621` | progress 替换与稳定 callback |
 | stream 资源释放 | `src/services/api/claude.ts:1515-1526` | native 资源 cleanup |
 
-## 11. 总结
+## 12. 总结
 
 这套工程最值得学习的地方之一，不是某个功能，而是它如何把“长期运行的 Agent 会话”当成一类需要精细治理的系统：
 

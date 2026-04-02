@@ -1,6 +1,6 @@
 # Transcript 持久化、会话恢复与 `resume` 语义
 
-本文分析会话如何写入磁盘，以及 `--resume` / `--continue` 如何把磁盘状态重新恢复为 live runtime。
+本篇拆解会话如何写入磁盘，以及 `--resume` / `--continue` 如何把磁盘状态重新恢复为 live runtime。
 
 ## 1. 这套系统存的不是“聊天记录”，而是 append-only 会话日志
 
@@ -65,7 +65,7 @@ session file 的创建时机非常克制：
 2. 让 `--name`、mode、agentSetting 等信息先缓存，等真正有会话内容时再落盘。
 3. 结合 `--no-session-persistence` / `cleanupPeriodDays=0` / test env 一起统一控制是否根本不写 transcript。
 
-这说明 transcript 系统默认优先保证：
+transcript 系统默认优先保证：
 
 - resume 质量
 - session 列表干净度
@@ -92,9 +92,13 @@ session file 的创建时机非常克制：
 - `tool_result` 类型 user message 如果带 `sourceToolAssistantUUID`，会改写父节点
 - compact boundary 会把 `parentUuid` 断开，并把旧父节点放到 `logicalParentUuid`
 
-这说明 transcript 的核心数据结构不是数组，而是：
+transcript 的核心数据结构不是数组，而是：
 
 > 一张 append-only、可裁剪、可跨 boundary 重连的消息 DAG。
+
+`compact boundary`、`snip`、`context collapse` 在运行时分别如何工作，完整说明见：
+
+- [17-context-management.md](./17-context-management.md)
 
 ## 5. progress 被明确排除在持久化主链之外
 
@@ -176,7 +180,7 @@ session file 的创建时机非常克制：
 - 仍然使用同样的 load chain 逻辑
 - 还能单独提取 content replacements
 
-这说明 transcript 系统天然支持：
+transcript 系统天然支持：
 
 - 主链
 - sidechain
@@ -225,7 +229,7 @@ session file 的创建时机非常克制：
 - 把中断状态分成 `interrupted_prompt` / `interrupted_turn`
 - 必要时自动注入一条 meta user continuation message
 
-这说明 transcript 恢复不是“相信磁盘一定完美”，而是默认：
+transcript 恢复不是“相信磁盘一定完美”，而是默认：
 
 > 进程可能在 streaming、tool_use、brief mode 等中间状态被杀掉，因此恢复层必须主动消毒和补形状。
 

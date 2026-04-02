@@ -1,14 +1,14 @@
 # `deep_dive_cx` 阅读导航
 
-这组文档面向“想快速建立 Claude Code CLI 源码全局心智模型”的读者。
+这组文档旨在为 Claude Code CLI 源码建立一张可连续追踪的整体地图。
 
-如果只从代码目录树开始读，很容易被以下问题拖住：
+仅从目录树切入，通常会同时遇到以下问题：
 
 - 入口太大，不知道先看哪里。
 - REPL、`query()`、工具系统、插件系统彼此交叉，很难一次理清。
 - 文档虽然按专题拆开了，但跨篇关系不够显式。
 
-这份 `README` 的作用就是给出：
+本导航提供：
 
 1. 整体阅读顺序。
 2. 每篇文档回答的核心问题。
@@ -24,16 +24,17 @@
 4. [03-repl-and-state.md](./03-repl-and-state.md)：看交互模式下的控制中心。
 5. [04-input-command-queue.md](./04-input-command-queue.md)：看输入如何变成一次 turn。
 6. [05-query-and-request.md](./05-query-and-request.md)：看请求主循环、流式响应和工具回流。
-7. [06-tools-and-permissions.md](./06-tools-and-permissions.md)：看工具系统和权限判定。
-8. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)：补齐 hooks 运行时模型。
-9. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)：看扩展如何接入命令和工具总线。
-10. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)：看子代理、后台任务和远程会话。
-11. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)：补齐 transcript、resume 与恢复链路。
-12. [15-prompt-system.md](./15-prompt-system.md)：把 system prompt、工具 prompt、技能 prompt、子代理 prompt 和二级模型 prompt 串成一张图。
-13. [16-memory-system.md](./16-memory-system.md)：把 auto-memory、team memory、KAIROS daily log、SessionMemory、dream consolidation 串成一条持久化主线。
-14. [09-performance-cache-context.md](./09-performance-cache-context.md)：把性能、缓存和上下文治理串起来。
-15. [10-queryengine-sdk.md](./10-queryengine-sdk.md)：再看非交互/SDK 路径如何复用内核。
-16. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)：最后补 API provider、retry 与错误治理。
+7. [17-context-management.md](./17-context-management.md)：专门看上下文治理、压缩阶梯和 overflow 恢复。
+8. [06-tools-and-permissions.md](./06-tools-and-permissions.md)：看工具系统和权限判定。
+9. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)：补齐 hooks 运行时模型。
+10. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)：看扩展如何接入命令和工具总线。
+11. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)：看子代理、后台任务和远程会话。
+12. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)：补齐 transcript、resume 与恢复链路。
+13. [15-prompt-system.md](./15-prompt-system.md)：把 system prompt、工具 prompt、技能 prompt、子代理 prompt 和二级模型 prompt 串成一张图。
+14. [16-memory-system.md](./16-memory-system.md)：把 auto-memory、team memory、KAIROS daily log、SessionMemory、dream consolidation 串成一条持久化主线。
+15. [09-performance-cache-context.md](./09-performance-cache-context.md)：看性能、缓存、观测与长会话稳定性。
+16. [10-queryengine-sdk.md](./10-queryengine-sdk.md)：再看非交互/SDK 路径如何复用内核。
+17. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)：最后补 API provider、retry 与错误治理。
 
 ## 2. 各篇一句话索引
 
@@ -44,6 +45,7 @@
 | [03-repl-and-state.md](./03-repl-and-state.md) | 交互模式的控制中心在哪里，状态怎么流动 | 想读 `REPL.tsx` 前 |
 | [04-input-command-queue.md](./04-input-command-queue.md) | 用户输入如何分类、排队、转消息 | 想跟 prompt 提交流程时 |
 | [05-query-and-request.md](./05-query-and-request.md) | `query()` 为什么是多轮状态机，不只是 API 包装 | 想读 `query.ts` 时 |
+| [17-context-management.md](./17-context-management.md) | `snip`、`microcompact`、`context collapse`、`autocompact` 如何组成上下文治理链路 | 想单独研究上下文压缩与 overflow 恢复时 |
 | [06-tools-and-permissions.md](./06-tools-and-permissions.md) | 工具如何装配、校验、执行、回流 | 想搞懂 Agent 工具调用时 |
 | [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md) | 技能、插件、MCP 如何并入主系统 | 想研究扩展机制时 |
 | [08-agents-tasks-remote.md](./08-agents-tasks-remote.md) | 子代理和后台/远程任务如何运行 | 想研究多代理与任务系统时 |
@@ -54,64 +56,68 @@
 | [13-session-storage-and-resume.md](./13-session-storage-and-resume.md) | transcript 如何持久化，resume 如何真正恢复 live session | 想研究会话恢复与 JSONL 结构时 |
 | [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md) | provider 选择、重试与错误治理如何工作 | 想深挖 `services/api` 时 |
 | [15-prompt-system.md](./15-prompt-system.md) | Claude Code 到底有哪些提示词，它们如何被装配、缓存和分发 | 想系统理解 prompt runtime 时 |
-| [16-memory-system.md](./16-memory-system.md) | 记忆系统有哪些层，KAIROS daily log 为什么是另一条持久化路线 | 想专门研究长期上下文与 memory 治理时 |
+| [16-memory-system.md](./16-memory-system.md) | 记忆系统有哪些层，公共流传的“7 层记忆”哪些能被代码证实，KAIROS daily log 为什么是另一条持久化路线 | 想专门研究长期上下文与 memory 治理时 |
 
 ## 3. 按目标选读
 
 ### 3.1 想快速跑通“交互式一条消息”
 
-按下面顺序读：
+推荐路径如下：
 
 1. [02-startup-flow.md](./02-startup-flow.md)
 2. [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)
 3. [03-repl-and-state.md](./03-repl-and-state.md)
 4. [04-input-command-queue.md](./04-input-command-queue.md)
 5. [05-query-and-request.md](./05-query-and-request.md)
-6. [15-prompt-system.md](./15-prompt-system.md)
-7. [16-memory-system.md](./16-memory-system.md)
-8. [06-tools-and-permissions.md](./06-tools-and-permissions.md)
-9. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+6. [17-context-management.md](./17-context-management.md)
+7. [15-prompt-system.md](./15-prompt-system.md)
+8. [16-memory-system.md](./16-memory-system.md)
+9. [06-tools-and-permissions.md](./06-tools-and-permissions.md)
+10. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
 
 ### 3.2 想理解“为什么这个项目这么大”
 
-按下面顺序读：
+推荐路径如下：
 
 1. [01-architecture.md](./01-architecture.md)
 2. [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)
-3. [15-prompt-system.md](./15-prompt-system.md)
-4. [16-memory-system.md](./16-memory-system.md)
-5. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
-6. [09-performance-cache-context.md](./09-performance-cache-context.md)
-7. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)
-8. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
+3. [17-context-management.md](./17-context-management.md)
+4. [15-prompt-system.md](./15-prompt-system.md)
+5. [16-memory-system.md](./16-memory-system.md)
+6. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+7. [09-performance-cache-context.md](./09-performance-cache-context.md)
+8. [07-extension-skills-plugins-mcp.md](./07-extension-skills-plugins-mcp.md)
+9. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
 
 ### 3.3 想研究 SDK / headless / 自动化场景
 
-按下面顺序读：
+推荐路径如下：
 
 1. [01-architecture.md](./01-architecture.md)
 2. [05-query-and-request.md](./05-query-and-request.md)
-3. [15-prompt-system.md](./15-prompt-system.md)
-4. [16-memory-system.md](./16-memory-system.md)
-5. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
-6. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
-7. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
-8. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
+3. [17-context-management.md](./17-context-management.md)
+4. [15-prompt-system.md](./15-prompt-system.md)
+5. [16-memory-system.md](./16-memory-system.md)
+6. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
+7. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
+8. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
+9. [08-agents-tasks-remote.md](./08-agents-tasks-remote.md)
 
 ### 3.4 想研究配置、hooks 与 resume 这些“隐藏复杂度”
 
-按下面顺序读：
+推荐路径如下：
 
 1. [11-settings-policy-and-env.md](./11-settings-policy-and-env.md)
-2. [15-prompt-system.md](./15-prompt-system.md)
-3. [16-memory-system.md](./16-memory-system.md)
-4. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
-5. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
-6. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
+2. [17-context-management.md](./17-context-management.md)
+3. [15-prompt-system.md](./15-prompt-system.md)
+4. [16-memory-system.md](./16-memory-system.md)
+5. [12-hooks-lifecycle-and-runtime.md](./12-hooks-lifecycle-and-runtime.md)
+6. [13-session-storage-and-resume.md](./13-session-storage-and-resume.md)
+7. [14-api-provider-retry-errors.md](./14-api-provider-retry-errors.md)
 
 ### 3.5 想专门研究“长期记忆、会话续航、KAIROS”
 
-按下面顺序读：
+推荐路径如下：
 
 1. [15-prompt-system.md](./15-prompt-system.md)
 2. [16-memory-system.md](./16-memory-system.md)
@@ -119,7 +125,7 @@
 4. [10-queryengine-sdk.md](./10-queryengine-sdk.md)
 5. [02-startup-flow.md](./02-startup-flow.md)
 
-## 4. 建议先记住的术语
+## 4. 核心术语表
 
 | 术语 | 在这组文档里的含义 |
 | --- | --- |
@@ -137,6 +143,6 @@
 
 ## 5. 阅读建议
 
-- 不要试图一次读完整个仓库，先按文档主线建立地图。
+- 不必一次性通读整个仓库，可先沿文档主线建立整体地图。
 - 读每篇时优先看“定义”“流程图”“关键源码锚点”三块。
 - 真正卡住时，再回到对应的大文件做定点阅读，而不是整文件顺着翻。

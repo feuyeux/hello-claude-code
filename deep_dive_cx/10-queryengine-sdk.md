@@ -1,6 +1,6 @@
 # `QueryEngine` 与 SDK/非交互路径
 
-本文分析没有 REPL 时，系统如何通过 `QueryEngine` 复用同一套 query 内核。
+本篇说明没有 REPL 时，系统如何通过 `QueryEngine` 复用同一套 query 内核。
 
 ## 1. 为什么还要专门讲 `QueryEngine`
 
@@ -16,7 +16,7 @@
 
 - `src/QueryEngine.ts`
 
-理解它可以帮助你回答几个问题：
+这一层主要解释以下问题：
 
 1. 非交互模式如何复用 `query()` 主循环。
 2. 没有 REPL 时，消息、权限、transcript、structured output 怎么处理。
@@ -37,7 +37,7 @@
 - `discoveredSkillNames`
 - `loadedNestedMemoryPaths`
 
-这说明它不是一次性的纯函数，而是：
+`QueryEngine` 不是一次性的纯函数，而是：
 
 > 面向一个 headless 会话的执行控制器
 
@@ -69,7 +69,7 @@
 
 然后 `setCwd(cwd)`。
 
-说明：
+结论如下：
 
 - 非交互模式仍然是“项目上下文敏感”的。
 
@@ -81,7 +81,7 @@
 
 - `permission_denials`
 
-所以这里做了一个 wrapper。
+因此实现里包了一层 wrapper。
 
 ## 4.3 预取 system prompt parts
 
@@ -102,7 +102,7 @@
 
 如果 SDK 调用者提供了 custom system prompt，且开启了 memory path override，QueryEngine 会额外注入 memory mechanics prompt。
 
-说明它考虑的是：
+这意味着：
 
 - SDK 调用方可能接入了自定义 memory directory
 - 因此需要显式告诉模型如何使用这套 memory 机制
@@ -118,7 +118,7 @@
 
 则会注册 structured output enforcement。
 
-这说明 QueryEngine 比 REPL 更强调：
+QueryEngine 比 REPL 更强调：
 
 - 可程序化输出约束
 
@@ -145,7 +145,7 @@ headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”
 
 如果存在 `orphanedPermission`，它会在本轮输入开始前先处理掉。
 
-这说明 SDK/远程等模式会考虑：
+SDK/远程等模式会考虑：
 
 - 上一次会话可能停在“等待权限”中间态
 
@@ -155,7 +155,7 @@ headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”
 
 关键代码：`src/QueryEngine.ts:410-428`
 
-这点非常关键：
+关键点在于：
 
 - QueryEngine 没有另写一套输入语义逻辑。
 - 它复用了与 REPL 相同的 `processUserInput(...)`。
@@ -166,7 +166,7 @@ headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”
 
 关键代码：`src/QueryEngine.ts:436-463`
 
-源码注释说明得非常透彻：
+源码注释点明：
 
 - 如果用户消息不在进入 query 前就写入 transcript，那么进程中途被杀时，resume 可能找不到任何有效会话。
 
@@ -207,7 +207,7 @@ headless 模式不是简化版 runtime，而是“去 UI 的同内核 runtime”
 - compact boundary message
 - 最终 success result
 
-这说明 QueryEngine 也承担了协议转换责任。
+QueryEngine 也承担了协议转换责任。
 
 ## 12. 真正进入 query 后，它主要做三类工作
 

@@ -1,6 +1,6 @@
 # API Provider 选择、请求构造、重试与错误治理
 
-本文分析 `query()` 如何落到不同 provider、如何构造请求、如何重试，以及如何把底层错误翻译成会话消息。
+本篇梳理 `query()` 如何落到不同 provider、如何构造请求、如何重试，以及如何把底层错误翻译成会话消息。
 
 ## 1. 为什么这一块不能只看 `claude.ts`
 
@@ -33,7 +33,7 @@
 - `CLAUDE_CODE_USE_FOUNDRY`
 - `CLAUDE_CODE_USE_VERTEX`
 
-这说明 provider 选择在这里被当成：
+provider 选择在这里被当成：
 
 > 进程级运行环境，而不是单次 query 的轻量选项。
 
@@ -84,7 +84,7 @@
 
 - 就算超时拿不到 server request ID，也要能和服务端日志对齐
 
-这说明 API 层不是单纯发送请求，而是已经内建了：
+API 层不是单纯发送请求，而是已经内建了：
 
 - 相关性追踪
 - provider 兼容边界
@@ -113,7 +113,7 @@
 - `speed`
 - provider-specific extraBodyParams
 
-这说明 request builder 不是静态 pure config，而是：
+request builder 不是静态 pure config，而是：
 
 > 一个会被 retry context、provider、feature state、fast mode、structured output 等因素动态影响的闭包。
 
@@ -151,7 +151,7 @@
 - thinking 开启时 temperature 不能乱传
 - budget 需要给实际 `max_tokens` 留出空间
 
-这说明 `query()` 层只是在表达意图，真正把这些意图翻译成 provider 可接受参数的是 API 层。
+`query()` 层只是在表达意图，真正把这些意图翻译成 provider 可接受参数的是 API 层。
 
 ## 8. streaming 调用前后有清晰的性能观察点
 
@@ -170,7 +170,7 @@
 
 拿到 response headers 和 stream。
 
-这说明 API 层不仅关心“能不能请求成功”，也关心：
+API 层不仅关心“能不能请求成功”，也关心：
 
 - client 初始化耗时
 - 网络 TTFB
@@ -187,7 +187,7 @@
 - 自己区分 foreground / background query source
 - 自己决定 529、429、401、cloud auth error、context overflow 的处理
 
-这说明 retry 语义是 Claude Code 运行时的一部分，不是 SDK 默认策略。
+retry 语义是 Claude Code 运行时的一部分，不是 SDK 默认策略。
 
 ## 10. 529 重试是按 query source 分层的
 
@@ -226,7 +226,7 @@
 - 进入 cooldown，切回 standard speed
 - 永久禁用本次 fast mode 语义
 
-这说明 fast mode 不是简单的布尔开关，而是：
+fast mode 不是简单的布尔开关，而是：
 
 > 带有运行期退避与降级路径的优化模式。
 
@@ -257,7 +257,7 @@
 - 长等待会被拆成 heartbeat chunk
 - QueryEngine 会收到系统消息，避免宿主误判 idle
 
-这说明 retry 层已经考虑了：
+retry 层已经考虑了：
 
 - cron/daemon/unattended workload
 - 长时间限流窗口
@@ -273,7 +273,7 @@
 - 计算安全 buffer
 - 自动下调下一次请求的 `max_tokens`
 
-这说明 retry 层不仅是在“等一下再试”，还在：
+retry 层不仅是在“等一下再试”，还在：
 
 > 依据错误类型对下一次请求参数做有针对性的修正。
 
@@ -326,7 +326,7 @@
 - 某些 mid-stream fallback 会导致重复 tool_use 风险
 - stream/native resource 需要专门 cleanup
 
-这说明 API 层最怕的不是单纯网络错误，而是：
+API 层最怕的不是单纯网络错误，而是：
 
 > streaming 半途中失败后，把“已部分暴露给运行时的消息状态”重新收束回一致状态。
 

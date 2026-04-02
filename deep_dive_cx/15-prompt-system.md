@@ -1,6 +1,6 @@
 # Claude Code 的提示词系统
 
-本文分析 Claude Code 中各类提示词资产的类型、注入时机和运行时装配方式。
+本篇梳理 Claude Code 中各类提示词资产的类型、注入时机和运行时装配方式。
 
 ## 1. 定义
 
@@ -44,7 +44,7 @@ Claude Code 不是“先写一大段 system prompt，再随便调用工具”，
 - 只展示给用户但不会送进模型的状态文案。
 - 大量反编译残留的 stub 文件。
 
-这篇文档聚焦 2.1 和 2.2。
+下文主要覆盖 2.1 与 2.2。
 
 ---
 
@@ -115,7 +115,7 @@ Claude Code 不是“先写一大段 system prompt，再随便调用工具”，
 5. `appendSystemContext(systemPrompt, systemContext)` 会把 systemContext 作为 system prompt 尾部拼进去。
 6. `prependUserContext(messages, userContext)` 会把 userContext 作为一条 meta user message 放到消息前面。
 
-这说明 Claude Code 的真正“上下文前缀”不是单一 system prompt，而是：
+Claude Code 的真正“上下文前缀”不是单一 system prompt，而是：
 
 `system prompt blocks + user meta context message + 正常消息历史`
 
@@ -257,7 +257,7 @@ Claude Code 明确把 system prompt 分成：
 
 拆成不同 cache scope。
 
-这说明 Claude Code 不是“写 prompt”，而是在做“可缓存的 prompt 编译”。
+Claude Code 做的不是“写 prompt”，而是“可缓存的 prompt 编译”。
 
 ## 6.2 很多 prompt 设计都服务于 cache 稳定性
 
@@ -478,7 +478,7 @@ As you answer the user's questions, you can use the following context:
 
 这些目录里的很多文件是反编译后的镜像或 type stub，不应该和主实现重复计入。
 
-真正应该优先看的 canonical prompt 资产，集中在：
+canonical prompt 资产主要集中在：
 
 - `src/constants/prompts.ts`
 - `src/tools/*/prompt.ts`
@@ -531,7 +531,7 @@ built-in prompt command 里比较典型的有：
 
 它们的特点是：
 
-- 通过 `executeShellCommandsInPrompt(...)` 先把 `git status/diff/log` 注入 prompt。
+- 通过 `executeShellCommandsInPrompt(...)` 预先将 `git status/diff/log` 注入 prompt。
 - 再给模型一套严格的 git safety protocol。
 - 强制 heredoc 格式。
 
@@ -659,7 +659,7 @@ built-in prompt command 里比较典型的有：
 - 写完整 system prompt
 - 生成 `identifier/whenToUse/systemPrompt` JSON
 
-这说明 Claude Code 连“创建新代理”本身都被做成了专门 prompt 工作流。
+连“创建新代理”本身都被做成了专门 prompt 工作流。
 
 ---
 
@@ -698,7 +698,7 @@ built-in prompt command 里比较典型的有：
 - 已经写进 `CLAUDE.md` 的内容
 - 当前对话中的临时任务细节
 
-这说明 Claude Code 的 memory 设计目标不是做“第二份项目文档”，而是存不可从仓库直接推导出的上下文。
+Claude Code 的 memory 设计目标不是做“第二份项目文档”，而是保存不可从仓库直接推导出的上下文。
 
 ## 11.3 它还专门处理了“记忆漂移”
 
@@ -768,6 +768,62 @@ Claude Code 已经把 prompt 层设计扩展到了多人协作。
 
 这代表 Claude Code 不只是自动写记忆，还给了用户一个“回收和整理旧提示”的入口。
 
+## 11.9 prompt 层定义的是 memory policy，不等于整个 memory runtime
+
+这点是外部讨论里最容易混淆的地方。
+
+从 prompt 视角看，`memdir.ts` / `memoryTypes.ts` / `teamMemPrompts.ts` 做的事情是：
+
+- 定义什么信息算 durable memory
+- 定义什么绝对不能存
+- 定义 type / scope / drift / ignore-memory 这些行为规则
+
+但从源码全局看，memory runtime 明显分成了几类不同 prompt：
+
+- 主 system prompt 里的 auto-memory / team memory 规则
+- `extractMemories` 的后台补写 prompt
+- `SessionMemory` 的结构化 notes prompt
+- `dream` / consolidation 的蒸馏 prompt
+- agent memory 复用的持久化 prompt
+
+也就是说：
+
+> Claude Code 不是“有一段 memory prompt，所以就有了记忆系统”，而是“先用 prompt 定义记忆政策，再让不同子代理在不同阶段执行这些政策”。
+
+这也是为什么外部“7 层记忆”解读虽然方向对，但如果只看主 prompt，很容易把 `SessionMemory`、`dream`、agent memory 这些运行时机制漏掉。
+
+## 11.10 Prompt 架构与缓存稳定性的源码关系
+
+Claude Code 的 prompt system 不是一段孤立 system prompt，而是和 cache、tool surfacing、agent fork 一起设计的。  
+从源码上，更可靠的表述不是“九层 prompt 神经中枢”，而是：
+
+> **多阶段 prompt 编译 + cache-safe request shaping**
+
+可以拆成四件更可证实的事：
+
+1. **主 prompt 只是第一阶段编译产物。**  
+   `getSystemPrompt()` 先拼出 section 数组；`fetchSystemPromptParts()` 再把 `defaultSystemPrompt / userContext / systemContext` 分流；到了 `claude.ts` 真正发请求前，还会 prepend attribution、CLI prefix、advisor、tool-search 相关块。
+
+2. **cache 稳定性直接决定 prompt 结构长什么样。**  
+   `SYSTEM_PROMPT_DYNAMIC_BOUNDARY`、`systemPromptSection(...)` 的 memoize、`splitSysPromptPrefix(...)` 的分块策略，都在做同一件事：把高抖动内容尽量挪出可缓存前缀。
+
+3. **很多“功能增强”其实是 prompt 外移，而不是 prompt 变厚。**  
+   典型例子有：
+   - `defer_loading` + `tool_reference`：把 MCP / deferred tools 从主工具表挪到 Tool Search 路径
+   - MCP instructions delta：避免 server 晚连接就重写整个 system prompt
+   - relevant memories attachment：避免把整份 `MEMORY.md` 常驻塞进前缀
+
+4. **子代理也服从同一套 cache-first prompt 约束。**  
+   fork path 不是重新生成一套 worker prompt，而是尽量继承父线程的 system prompt 和 exact tool pool，目标就是 `cache-identical prefix`。prompt 设计已经深入到了 multi-agent runtime。
+
+还有一个需要降噪的点：外部文章里常说的“自我进化”，在源码里并不是某个自我改写的超级 prompt。更接近事实的拆法是：
+
+- prompt 负责定义 policy
+- memory / extract / dream / hooks / skills 负责在不同阶段执行 policy
+- cache / tool delta / agent fork 负责让这些 policy 以更低成本送进模型
+
+因此，把 Claude Code 理解成“prompt 架构 + cache 架构的联合体”是对的；但要避免把所有运行时子系统都误写成 prompt 本身。
+
 ---
 
 ## 12. compact、summary、title 这些二级 prompt 说明了什么
@@ -789,7 +845,11 @@ Claude Code 已经把 prompt 层设计扩展到了多人协作。
   - Current Work
   - Optional Next Step
 
-这说明 compact 不是“随便总结一下”，而是在做“可继续执行的上下文重编译”。
+compact 不是“随便总结一下”，而是在做“可继续执行的上下文重编译”。
+
+`compact` 在整条上下文治理流水线中的位置，完整说明见：
+
+- [17-context-management.md](./17-context-management.md)
 
 ## 12.2 `awaySummary` 是为回到会话的用户写的
 
@@ -877,7 +937,7 @@ Claude Code 已经把 prompt 层设计扩展到了多人协作。
 - 不要 Claude 口吻
 - 不明显就沉默
 
-这块很能体现 Claude Code 已经在用 prompt 做“交互预测”。
+这一层清楚体现了 Claude Code 已经在用 prompt 做“交互预测”。
 
 ## 13.3 自然语言日期解析
 
@@ -903,7 +963,7 @@ Claude Code 已经把 prompt 层设计扩展到了多人协作。
 - `src/utils/hooks/execAgentHook.ts`
 - `src/utils/hooks/apiQueryHookHelper.ts`
 
-这里说明：
+结论如下：
 
 - hook 本身就可以是 prompt。
 - 还能起 agent 级验证。
