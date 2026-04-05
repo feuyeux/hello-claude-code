@@ -10,6 +10,7 @@ import { normalizeApiKeyForConfig } from '../utils/authPortable.js';
 import { getCustomApiKeyStatus } from '../utils/config.js';
 import { env } from '../utils/env.js';
 import { isRunningOnHomespace } from '../utils/envUtils.js';
+import { isFirstPartyAnthropicBaseUrl } from '../utils/model/providers.js';
 import { PreflightStep } from '../utils/preflightChecks.js';
 import type { ThemeSetting } from '../utils/theme.js';
 import { ApproveApiKey } from './ApproveApiKey.js';
@@ -33,12 +34,14 @@ export function Onboarding({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [skipOAuth, setSkipOAuth] = useState(false);
   const [oauthEnabled] = useState(() => isAnthropicAuthEnabled());
+  const [usesCompatibleGateway] = useState(() => !isFirstPartyAnthropicBaseUrl());
   const [theme, setTheme] = useTheme();
   useEffect(() => {
     logEvent('tengu_began_setup', {
-      oauthEnabled
+      oauthEnabled,
+      usesCompatibleGateway
     });
-  }, [oauthEnabled]);
+  }, [oauthEnabled, usesCompatibleGateway]);
   function goToNextStep() {
     if (currentStepIndex < steps.length - 1) {
       const nextIndex = currentStepIndex + 1;
@@ -114,7 +117,7 @@ export function Onboarding({
     goToNextStep();
   }
   const steps: OnboardingStep[] = [];
-  if (oauthEnabled) {
+  if (oauthEnabled && !usesCompatibleGateway) {
     steps.push({
       id: 'preflight',
       component: preflightStep
@@ -130,7 +133,7 @@ export function Onboarding({
       component: <ApproveApiKey customApiKeyTruncated={apiKeyNeedingApproval} onDone={handleApiKeyDone} />
     });
   }
-  if (oauthEnabled) {
+  if (oauthEnabled && !usesCompatibleGateway) {
     steps.push({
       id: 'oauth',
       component: <SkippableStep skip={skipOAuth} onSkip={goToNextStep}>
