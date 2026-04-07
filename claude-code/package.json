@@ -12,6 +12,7 @@
     "scripts": {
         "build": "bun build src/entrypoints/cli.tsx --outdir dist --target bun",
         "dev": "bun run src/entrypoints/cli.tsx",
+        "dev:gemma": "powershell -ExecutionPolicy Bypass -File ./scripts/start-gemma-ollama.ps1",
         "prepublishOnly": "bun run build",
         "lint": "biome lint src/",
         "lint:fix": "biome lint --fix src/",
