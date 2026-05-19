@@ -50,6 +50,7 @@ flowchart TD
 **MCP 服务器等待**：如果 selectedAgent 声明了 `requiredMcpServers`，AgentTool 会轮询最多 30 秒等待这些服务器就绪。这是一个极其实际的设计——MCP 服务器连接是异步的，在代理启动时可能仍处于 `pending` 状态。
 
 **异步判定逻辑**：`shouldRunAsync` 的计算考虑了 5 个独立条件的 OR：
+
 1. `run_in_background === true`（用户显式指定）
 2. `selectedAgent.background === true`（Agent 定义强制后台）
 3. `isCoordinatorMode()`（Coordinator 模式下所有 worker 都是异步的）
@@ -77,7 +78,7 @@ fork 子代理是一个实验性路径（由 `FORK_SUBAGENT` feature flag 控制
 `builtInAgents.ts` 中注册的内置 Agent 列表：
 
 | Agent | 用途 | 特殊属性 |
-|-------|------|----------|
+| :-------| :------| :----------|
 | **general-purpose** | 通用子代理，默认选项 | 无特殊限制 |
 | **Explore** | 只读代码探索 | `omitClaudeMd: true`，省略 gitStatus |
 | **Plan** | 制定实施计划 | `omitClaudeMd: true`，省略 gitStatus |
@@ -148,7 +149,7 @@ Worker 拥有完整的工具池（由 `ASYNC_AGENT_ALLOWED_TOOLS` 定义），�
 任务系统 v2 围绕 5 个工具构建：
 
 | Tool | 作用 | 使用者 |
-|------|------|--------|
+| :------| :------| :--------|
 | `TaskCreate` | 创建任务，写入共享任务列表 | Teammate |
 | `TaskGet` | 获取任务详情和状态 | Teammate |
 | `TaskList` | 列出所有任务 | Teammate |
@@ -279,6 +280,7 @@ Git source 的选择值得深入：函数先通过 `checkGithubAppInstalled()` �
 - 合成器汇总结果（synthesizing 阶段）
 
 本地 CLI 只负责：
+
 1. **计费门控**：`checkOverageGate()` 检查免费配额、Extra Usage 余额（最低 $10）
 2. **启动远程会话**：`launchRemoteReview()` 调用 `teleportToRemote()` 并使用特殊的 environment
 3. **注册轮询任务**：`registerRemoteAgentTask` 开始从 events API 拉取进度
@@ -328,6 +330,7 @@ Claude Code 提供三种代理间通信机制：
 `writeToMailbox()` 将消息写入文件系统上的 JSON 信箱。信箱消息包含 `from`、`text`（纯文本或 JSON 字符串）、`summary`、`timestamp`、`color` 字段。
 
 信箱支持结构化消息类型：
+
 - `shutdown_request` / `shutdown_response`：优雅关闭协议
 - `plan_approval_response`：Plan 模式下的审批流
 
@@ -338,6 +341,7 @@ in-process teammate 的关闭流程特别精巧：收到 shutdown_request 后，
 `AsyncHookRegistry` 是一个全局单例 Map（`pendingHooks`），用于追踪异步执行的 Hook 进程。虽然名字里有 "Hook"，但它的跟踪模式可以推广理解为 Claude Code 处理所有长生命周期异步操作的范式。
 
 核心数据结构 `PendingAsyncHook` 包含：
+
 - `processId` / `hookId`：唯一标识
 - `hookEvent`：触发事件类型（SessionStart、PreToolUse 等）
 - `timeout`：超时（默认 15 秒）

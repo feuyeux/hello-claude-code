@@ -5,7 +5,7 @@
 Claude Code 的记忆系统是一个精心设计但并不显眼的工程体系。代码里没有一个叫"MemoryManager"的统一管理器，也没有一个"7 层架构"的类继承树。实际上，它由 **8 个独立子系统**协同工作，每个子系统有自己的职责边界、数据流向和生命周期：
 
 | # | 子系统 | 核心文件 | 一句话定位 |
-|---|--------|----------|------------|
+| :---| :--------| :----------| :------------|
 | 1 | Durable Memory (自动记忆) | `memdir/memdir.ts`, `memdir/paths.ts`, `memdir/memoryTypes.ts` | 跨会话持久化的四类记忆，文件系统即数据库 |
 | 2 | Team Memory | `memdir/teamMemPaths.ts`, `memdir/teamMemPrompts.ts`, `services/teamMemorySync/` | 多人共享的团队记忆，带秘钥扫描和同步 |
 | 3 | Relevant Memory Recall | `memdir/findRelevantMemories.ts`, `memdir/memoryScan.ts` | 异步预取，用 side-query 让 Sonnet 选取最相关记忆 |
@@ -137,6 +137,7 @@ Team Memory 引入了 private 与 shared-team 两个 scope 维度。在 `memdir/
 - **team**：`~/.claude/projects/<slug>/memory/team/` —— 团队共享记忆，所有贡献者可见
 
 每种记忆类型都有 `<scope>` 标签指导放置策略：
+
 - user 永远 private
 - feedback 默认 private，只有明确是项目级约定时才放 team
 - project 偏向 team（"strongly bias toward team"）
@@ -346,12 +347,13 @@ Fork 有硬性的 `maxTurns: 5` 上限。设计预期是 2-4 个 turn（read -> 
 Agent Memory（`tools/AgentTool/agentMemory.ts`）为每个 Agent 类型提供独立的持久记忆，有三种 scope：
 
 | Scope | 路径 | 用途 |
-|-------|------|------|
+| :-------| :------| :------|
 | **user** | `~/.claude/agent-memory/<agentType>/` | 跨项目的通用学习，所有项目共享 |
 | **project** | `<cwd>/.claude/agent-memory/<agentType>/` | 特定项目的学习，通过版本控制与团队共享 |
 | **local** | `<cwd>/.claude/agent-memory-local/<agentType>/` | 特定项目+机器的学习，不进版本控制 |
 
 每种 scope 都有对应的 prompt 注入提示，指导 Agent 如何适配：
+
 - user scope：保持通用性，因为适用于所有项目
 - project scope：针对当前项目定制，因为与团队共享
 - local scope：针对当前项目和机器定制，不进版本控制
@@ -410,21 +412,25 @@ Dream/Consolidation（`services/autoDream/autoDream.ts`）是一个后台维护�
 Dream 的 prompt（`services/autoDream/consolidationPrompt.ts`）定义了四个阶段：
 
 **Phase 1 -- Orient（定位）**
+
 - `ls` 记忆目录，看已有什么
 - 读 MEMORY.md，理解当前索引
 - 浏览现有主题文件，避免创建重复
 
 **Phase 2 -- Gather recent signal（收集近期信号）**
+
 - 优先看 daily logs（如果是 KAIROS 模式的 assistant 布局）
 - 检查已有记忆是否与当前代码库矛盾（drift 检测）
 - 必要时窄范围搜索会话 transcript（最后手段，因为 JSONL 文件很大）
 
 **Phase 3 -- Consolidate（合并整理）**
+
 - 合并新信号到已有主题文件，而不是创建近似重复
 - 相对日期转绝对日期
 - 删除已被推翻的旧事实
 
 **Phase 4 -- Prune and index（修剪与索引）**
+
 - MEMORY.md 保持 200 行以内、25KB 以内
 - 移除过时指针
 - 压缩过长条目（超过 ~200 字符的索引行应该把细节移到主题文件）

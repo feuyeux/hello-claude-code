@@ -124,6 +124,7 @@ if (!Number.isFinite(gapMinutes) || gapMinutes < config.gapThresholdMinutes) {
 ```
 
 具体做法：
+
 - 收集所有 COMPACTABLE_TOOLS 的 tool_use_id
 - 保留最近 N 个（默认 keepRecent = 5），其余全部 content-clear
 - 内容替换为 `[Old tool result content cleared]`
@@ -157,6 +158,7 @@ if (toolsToDelete.length > 0) {
 #### Token 估算
 
 Microcompact 中的 token 估算使用 `estimateMessageTokens()`，其逻辑是：
+
 - 图片和文档类型：固定 2000 tokens（`IMAGE_MAX_TOKEN_SIZE`）
 - 文本类型：使用 `roughTokenCountEstimation()` 进行粗略计算
 - 最终结果乘以 4/3 做保守填充（因为是近似值）
@@ -241,6 +243,7 @@ flowchart TD
 SessionMemory 快速路径的核心思路是：如果系统已经有了一份持续更新的会话记忆（由 SessionMemory 模块维护），那就不需要再调一次 LLM 做摘要了。直接把 SessionMemory 的内容当作摘要，保留最近的消息，就完事了。
 
 具体的消息保留策略在 `calculateMessagesToKeepIndex()` 中：
+
 - 从 `lastSummarizedMessageId` 之后开始保留
 - 至少保留 minTokens（默认 10,000）个 token
 - 至少保留 minTextBlockMessages（默认 5）条有文本内容的消息
@@ -365,6 +368,7 @@ preservedSegment: {
 ```
 
 这些元数据让 transcript loader 能正确重建消息链：
+
 - **suffix-preserving**（reactive/session-memory 路径）：anchor 是最后一条 summary 消息
 - **prefix-preserving**（partial compact 路径）：anchor 是 boundary 本身
 
@@ -453,6 +457,7 @@ flowchart LR
 ### 回退条件
 
 SessionMemory 快速路径会在以下情况回退到传统路径：
+
 1. SessionMemory 功能未启用（feature flag 或配置）
 2. session memory 文件不存在
 3. session memory 内容是空模板（没有实际提取的内容）
@@ -474,7 +479,7 @@ SessionMemory 快速路径会在以下情况回退到传统路径：
 ## 关键源码锚点
 
 | 文件 | 行号/规模 | 职责 |
-|------|-----------|------|
+| :------| :-----------| :------|
 | query.ts | 369-543 | 管线前 5 阶段的编排 |
 | query.ts | 1088-1121 | Context Collapse Drain（413 恢复第一步） |
 | query.ts | 1122-1169 | Reactive Compact（413 恢复第二步） |

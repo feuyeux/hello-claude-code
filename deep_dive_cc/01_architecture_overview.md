@@ -118,12 +118,14 @@ export const COMMANDS = memoize((): Command[] => [
 ```
 
 **命令注册流程**:
+
 1. 内置命令直接导入
 2. 技能命令从 `~/.claude/commands/` 目录加载
 3. 插件命令从已安装插件加载
 4. 工作流命令动态创建
 
 **命令来源**:
+
 ```typescript
 // 优先级: bundled > builtinPlugin > skillDir > workflow > plugin > 内置
 const allCommands = [
@@ -163,6 +165,7 @@ export class QueryEngine {
 ```
 
 **查询循环核心逻辑** (`query.ts`):
+
 ```typescript
 async function* queryLoop(params: QueryParams) {
   while (true) {
@@ -424,6 +427,7 @@ if (feature('HISTORY_SNIP')) {
 ### 9.3 三层门控系统
 
 代码中存在三层能力门控：
+
 1. **编译时** feature flags：`feature('FLAG_NAME')` 全部返回 false，后面的代码是死代码
 2. **用户类型门控**：`process.env.USER_TYPE === 'ant'` 区分内部与外部用户
 3. **远程配置**：GrowthBook/Statsig 运行时特性开关
@@ -431,6 +435,7 @@ if (feature('HISTORY_SNIP')) {
 ### 9.4 缓存稳定性是一等公民
 
 大量设计决策服务于 Prompt Cache 命中率：
+
 - 系统 prompt 有显式的 `SYSTEM_PROMPT_DYNAMIC_BOUNDARY` 标记，静态部分跨组织复用
 - 工具池组装时内置工具形成连续前缀，MCP 工具追加在后
 - settings 临时文件路径使用内容哈希（不是随机 UUID），影响 Bash sandbox 列表进而影响 prompt cache key
@@ -439,7 +444,7 @@ if (feature('HISTORY_SNIP')) {
 ### 9.5 代码规模参考
 
 | 组件 | 文件数 | 说明 |
-|------|--------|------|
+| :------| :--------| :------|
 | src/ 顶层目录 | 44 个子目录 | ~1200+ 文件 |
 | services/api/ | 22 个文件 | claude.ts 126KB 是最大单文件 |
 | services/mcp/ | 23 个文件 | auth.ts 88KB, client.ts 119KB |

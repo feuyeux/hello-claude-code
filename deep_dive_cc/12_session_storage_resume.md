@@ -19,7 +19,7 @@ Claude Code 的每次对话都会被持久化到磁盘上的 JSONL 文件中。�
 每行是一个独立的 JSON 对象。文件中混杂着两大类条目：
 
 | 类别 | Entry type | 说明 |
-|------|-----------|------|
+| :------| :-----------| :------|
 | **消息** | `user`, `assistant`, `attachment`, `system` | 参与 parentUuid 链的对话消息 |
 | **元数据** | `summary`, `custom-title`, `ai-title`, `tag`, `agent-name`, `agent-setting`, `mode`, `pr-link`, `worktree-state`, `file-history-snapshot`, `attribution-snapshot`, `content-replacement`, `last-prompt`, `task-summary` 等 | 会话级别的辅助信息，不参与链 |
 
@@ -46,7 +46,7 @@ export function isTranscriptMessage(entry: Entry): entry is TranscriptMessage {
 每条消息写入时携带一组标准字段：
 
 | 字段 | 来源 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | `cwd` | `getCwd()` | 当时的工作目录 |
 | `userType` | `process.env.USER_TYPE` | 用户类型（external/internal） |
 | `entrypoint` | `CLAUDE_CODE_ENTRYPOINT` | 入口点标识（cli/sdk-ts/sdk-py） |
@@ -331,7 +331,7 @@ flowchart TD
 `detectTurnInterruption()` 分析恢复后消息的尾部状态，返回三种结果之一：
 
 | 场景 | 最后相关消息 | 返回 |
-|------|------------|------|
+| :------| :------------| :------|
 | 正常结束 | assistant（非 API error） | `none` |
 | 用户输入未处理 | user（纯文本） | `interrupted_prompt` |
 | 工具调用中断 | user（tool_result） | `interrupted_turn` |

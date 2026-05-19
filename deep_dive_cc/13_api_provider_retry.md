@@ -38,7 +38,7 @@ export function getAPIProvider(): APIProvider {
 不同 Provider 在认证刷新、错误码语义和 Beta Header 支持上存在显著差异：
 
 | 维度 | firstParty | Bedrock | Vertex | Foundry |
-|------|-----------|---------|--------|---------|
+| :------| :-----------| :---------| :--------| :---------|
 | 认证方式 | OAuth / API Key | AWS IAM / STS | GCP OAuth | 自定义 |
 | 凭据过期处理 | 401 → OAuth refresh | CredentialsProviderError 或 403 | Could not load/refresh credentials 或 401 | — |
 | Fast Mode | ✅ 支持 | ❌ 不可用 | ❌ 不可用 | ❌ 不可用 |
@@ -157,6 +157,7 @@ return baseDelay + jitter
 **MAX_529_RETRIES = 3**：连续 3 次 529 错误触发模型降级。
 
 降级路径：
+
 1. 如果配置了 `fallbackModel` → 抛 `FallbackTriggeredError`，上层切换到备用模型
 2. 如果是外部用户且没有 fallback → 抛 `CannotRetryError`，显示 "Repeated 529 Overloaded errors"
 3. 如果是持久模式 → 不触发 fallback，继续无限重试
@@ -170,7 +171,7 @@ return baseDelay + jitter
 `classifyAPIError()` 函数负责将任何错误映射为标准化的字符串标签。这些标签用于遥测 / Datadog 打点。以下是完整的分类清单：
 
 | 分类标签 | 触发条件 | 是否可重试 |
-|---------|---------|-----------|
+| :---------| :---------| :-----------|
 | `aborted` | Request was aborted. | ❌ |
 | `api_timeout` | APIConnectionTimeoutError 或消息含 timeout | ❌ |
 | `repeated_529` | 消息含 Repeated 529 Overloaded errors | ❌ |
@@ -228,6 +229,7 @@ Fast Mode 是 Claude Code 的"加速模式"（内部代号 Penguin Mode），仅
 **路径二：触发冷却（降级到标准速度）**
 
 当 `retry-after >= 20秒` 或没有此 header 时：
+
 - 冷却时长 = `max(retry-after, MIN_COOLDOWN_MS=600000ms)`
 - 默认冷却 = `DEFAULT_FAST_MODE_FALLBACK_HOLD_MS = 30分钟`
 - **最低保底 = 10 分钟**（`MIN_COOLDOWN_MS`），防止反复切换导致缓存颠簸
@@ -255,7 +257,7 @@ Claude API 的服务端对请求做 prompt caching，缓存键包含 Beta Header
 四个 Sticky Latch：
 
 | Latch | 对应 Header | 锁定条件 |
-|-------|------------|---------|
+| :-------| :------------| :---------|
 | `fastModeHeaderLatched` | Fast Mode beta | Fast Mode 首次激活 |
 | `afkHeaderLatched` | AFK Mode beta | Auto Mode 首次激活（仅 agentic 查询） |
 | `cacheEditingHeaderLatched` | Cache Editing beta | Cached Microcompact 首次启用 |
@@ -359,7 +361,7 @@ Keep-alive 连接有时会被中间代理静默断开。检测到 `ECONNRESET` �
 ## 11. 关键阈值表
 
 | 常量 | 值 | 含义 |
-|-----|---|------|
+| :-----| :---| :------|
 | `DEFAULT_MAX_RETRIES` | 10 | 默认最大重试次数 |
 | `BASE_DELAY_MS` | 500ms | 指数退避基础延迟 |
 | `FLOOR_OUTPUT_TOKENS` | 3000 | max_tokens 下限 |

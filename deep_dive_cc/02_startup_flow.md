@@ -389,7 +389,7 @@ sequenceDiagram
 ## 4. 关键初始化时间点
 
 | 阶段 | 操作 | 重要性 |
-|------|------|--------|
+| :------| :------| :--------|
 | init() | 配置系统启用 | 必须 |
 | init() | 遥测初始化 | 分析 |
 | init() | mTLS/代理配置 | 网络 |
@@ -451,6 +451,7 @@ preconnectAnthropicApi()
 ### 6.2 Trust 对话的门控范围
 
 Trust 对话不只是 UI 装饰，它实际上门控约 10 种能力：
+
 - Bash 工具执行
 - 所有 hooks 运行
 - 危险环境变量注入（endpoint URLs、auth tokens）

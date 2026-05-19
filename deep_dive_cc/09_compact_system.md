@@ -336,7 +336,7 @@ Token 估算：图片 2000 flat rate，文本 roughTokenCountEstimation()，乘 
 ### 8. 补充：Autocompact 精确阈值
 
 | 参数 | 值 |
-|------|------|
+| :------| :------|
 | AUTOCOMPACT_BUFFER_TOKENS | 13,000 |
 | MAX_OUTPUT_TOKENS_FOR_SUMMARY | 20,000 |
 | MAX_CONSECUTIVE_FAILURES | 3 |

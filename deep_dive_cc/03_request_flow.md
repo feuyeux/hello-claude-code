@@ -749,7 +749,7 @@ flowchart TD
 ### Phase 1: 循环入口与状态解构（行 307-363）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 01 | 311-321 | 从 `state` 解构出 `messages`, `toolUseContext`, `autoCompactTracking` 等 10 个变量。其中 `toolUseContext` 用 `let` 声明因为迭代内会重赋值，其余用 `const` |
 | 02 | 331-335 | 启动 Skill discovery prefetch。`findWritePivot` 守卫让非写操作迭代提前返回 |
 | 03 | 337 | yield `stream_request_start` 事件通知 UI 层新一轮请求开始 |
@@ -761,7 +761,7 @@ flowchart TD
 这是 5 步压缩流水线，顺序执行，每步的输出都是下一步的输入：
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 06 | 379-394 | `applyToolResultBudget`：对单条工具结果的大小施加限制。在 microcompact 之前运行，因为 MC 按 `tool_use_id` 操作，不会检查 content，两者互不干扰 |
 | 07 | 401-410 | History Snip（`feature('HISTORY_SNIP')`）：裁剪历史消息，释放 token。`snipTokensFreed` 传递给后续的 autocompact 阈值计算 |
 | 08 | 413-426 | Microcompact：微压缩，处理工具结果的缓存编辑。`pendingCacheEdits` 的 boundary message 延迟到 API 响应后 yield |
@@ -771,7 +771,7 @@ flowchart TD
 ### Phase 3: API 调用准备（行 546-648）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 11 | 546-549 | 将压缩后的 `messagesForQuery` 挂到 `toolUseContext.messages` |
 | 12 | 561-568 | 根据 `config.gates.streamingToolExecution` 初始化 `StreamingToolExecutor` |
 | 13 | 570-648 | 确定 `currentModel`（考虑 plan 模式和 200k token 阈值），执行 `blocking_limit` 检查。这个检查只在 autocompact 关闭且 reactive compact 关闭时生效——否则会预 empt 掉恢复路径 |
@@ -779,7 +779,7 @@ flowchart TD
 ### Phase 4: API 流式调用（行 652-895）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 14 | 653-866 | `deps.callModel()` 流式调用。外层 `while(attemptWithFallback)` 循环处理 fallback 重试。内层 `for await` 消费流式事件 |
 | 15 | 747-788 | Backfill tool_use inputs：对流式 yield 出去的 assistant message 做 clone，补填 `backfillObservableInput` 添加的字段。只 clone 有新增字段的情况，避免修改原始对象（影响 prompt caching 的字节匹配） |
 | 16 | 790-827 | Withholding 模式：对可恢复的错误消息（prompt-too-long、max-output-tokens、media-size-error）先扣留不 yield，push 进 `assistantMessages` 供后续恢复逻辑检测 |
@@ -789,7 +789,7 @@ flowchart TD
 ### Phase 5: 错误处理（行 896-1063）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 19 | 896-956 | `FallbackTriggeredError` 捕获：Opus -> Sonnet 降级。清空累积器，tombstone 孤立消息，strip thinking signatures，切换 `currentModel`，`continue` 重试 |
 | 20 | 1002-1012 | 执行 `executePostSamplingHooks`（fire-and-forget，不阻塞主循环） |
 | 21 | 1018-1055 | Abort 处理：消费 StreamingToolExecutor 残余结果，yield 中断消息，返回 `aborted_streaming` |
@@ -797,7 +797,7 @@ flowchart TD
 ### Phase 6: 无工具调用路径 —— `!needsFollowUp`（行 1065-1361）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 22 | 1065-1186 | Prompt-too-long 恢复三步：Context Collapse drain -> Reactive compact -> Surface error。详见第 11 节 |
 | 23 | 1191-1259 | Max output tokens 恢复三步：Escalate 8K->64K -> Multi-turn recovery x3 -> Surface error。详见第 11 节 |
 | 24 | 1270-1309 | Stop hooks 执行。如果有 `blockingErrors`，将错误注入消息并 `continue`（transition: `stop_hook_blocking`）。如果 `preventContinuation`，返回 `stop_hook_prevented` |
@@ -805,7 +805,7 @@ flowchart TD
 ### Phase 7: 有工具调用路径 —— `needsFollowUp`（行 1362-1731）
 
 | 阶段 | 行号 | 说明 |
-|------|------|------|
+| :------| :------| :------|
 | 25 | 1363-1411 | 工具执行：如果有 StreamingToolExecutor 就消费剩余结果，否则 `runTools()` 串行执行。处理 `hook_stopped_continuation` 附件 |
 | 26 | 1583-1631 | 附件收集：queued commands snapshot、memory prefetch consume、skill discovery prefetch consume。注意命令队列是 process-global 单例，按 agentId 过滤 |
 | 27 | 1663-1674 | MCP 工具刷新：调用 `refreshTools()` 让新连接的 MCP server 在下一轮可用 |
@@ -1125,7 +1125,7 @@ if (assistantMessages.length > 0) {
 `queryLoop()` 的 `while(true)` 循环有 10 种终止条件（`return { reason: ... }`），每种对应不同的退出语义：
 
 | Terminal Reason | 行号 | 触发条件 | 退出语义 |
-|----------------|------|----------|----------|
+| :----------------| :------| :----------| :----------|
 | `blocking_limit` | 646 | token 数达到硬限制（autocompact 关闭时） | 预防性终止，不消耗 API 调用 |
 | `image_error` | 980, 1178 | `ImageSizeError` / `ImageResizeError`，或 media error 恢复失败 | 用户需要缩小图片 |
 | `model_error` | 999 | `callModel` 抛出未处理异常 | 已 yield 错误消息和缺失的 tool_result |
@@ -1140,7 +1140,7 @@ if (assistantMessages.length > 0) {
 同时，`queryLoop` 还有 7 种 `continue` 条件（transition reason），每种对应一条恢复或续轮路径：
 
 | Continue Reason | 行号 | 触发条件 |
-|----------------|------|----------|
+| :----------------| :------| :----------|
 | `collapse_drain_retry` | 1113 | Context Collapse 成功排水 |
 | `reactive_compact_retry` | 1165 | Reactive compact 成功压缩 |
 | `max_output_tokens_escalate` | 1220 | 8K -> 64K token 升级 |

@@ -717,7 +717,7 @@ StreamingToolExecutor 是流式场景下的工具执行引擎。当 API 响应�
 ### 11.1 核心方法
 
 | 方法 | 职责 |
-|------|------|
+| :------| :------|
 | `addTool(block, assistantMessage)` | 流式解析出一个 `tool_use` block 后立即调用。查找工具定义，判断并发安全性，推入 `tools` 队列，触发 `processQueue` |
 | `getCompletedResults()` | **同步生成器**，按工具入队顺序依次 yield 已完成的结果。遇到未完成的非并发安全工具时停止——保证串行工具的结果顺序 |
 | `getRemainingResults()` | **异步生成器**，等待所有未完成工具执行结束，边等边 yield。内部通过 `Promise.race` 同时监听工具完成和进度事件 |
@@ -824,7 +824,7 @@ function partitionToolCalls(
 以 `[Read, Read, Bash, Edit, Read]` 为例：
 
 | 批次 | 工具 | 类型 | 执行方式 |
-|------|------|------|----------|
+| :------| :------| :------| :----------|
 | 1 | Read, Read | 安全 | 并行（`Promise.all` via `all()` 辅助函数） |
 | 2 | Bash | 不安全 | 串行 |
 | 3 | Edit | 不安全 | 串行 |
@@ -865,6 +865,7 @@ flowchart TB
 ### 阶段 3：PreToolUse Hooks
 
 遍历所有注册的 PreToolUse hooks（`runPreToolUseHooks`），每个 hook 可以：
+
 - 产出消息（附件消息或进度消息）
 - 返回权限决策（`hookPermissionResult`）覆盖默认权限流程
 - 修改工具输入（`hookUpdatedInput`）
@@ -1019,7 +1020,7 @@ export function classifyToolError(error: unknown): string {
 `ruleSourceToOTelSource` 和 `decisionReasonToOTelSource` 将内部的权限来源映射到标准化的 OTel `source` 词表：
 
 | 内部来源 | OTel source (allow) | OTel source (deny) |
-|----------|--------------------|--------------------|
+| :----------| :--------------------| :--------------------|
 | session | user_temporary | user_reject |
 | localSettings / userSettings | user_permanent | user_reject |
 | cliArg / policySettings / projectSettings / flagSettings | config | config |

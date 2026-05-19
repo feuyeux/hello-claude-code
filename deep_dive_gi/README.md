@@ -5,7 +5,7 @@
 ## 目录与主题对齐
 
 | 文件 | 对应主题 | 核心问题 |
-|------|------|------|
+| :------| :------| :------|
 | [01_architecture.md](./01_architecture.md) | 整体架构与分层 | 这套工程按什么分层，主线怎么走 |
 | [02_startup_flow.md](./02_startup_flow.md) | 进程启动流 | 进程如何从入口走到 setup、trust 和 REPL |
 | [03_repl_and_state.md](./03_repl_and_state.md) | 交互模式与控制中心 | 交互模式下 Ink/React 控制中心在哪里，状态怎么流动 |

@@ -17,7 +17,7 @@ Claude Code 的配置系统不是一个简单的"读 JSON 文件"。它要同时
 系统按以下优先级从低到高加载配置：
 
 | 优先级 | 源名称 | 文件位置 | 说明 |
-|--------|--------|---------|------|
+| :--------| :--------| :---------| :------|
 | 1 | userSettings | ~/.claude/settings.json | 用户全局配置 |
 | 2 | projectSettings | .claude/settings.json | 项目级配置（可 check in） |
 | 3 | localSettings | .claude/settings.local.json | 本地覆盖（不 check in） |
@@ -63,7 +63,7 @@ policySettings 是这套系统中最特殊的部分。它不走深合并，而�
 ### 3.1 四级策略源（优先级从高到低）
 
 | 优先级 | 源 | 说明 |
-|--------|------|------|
+| :--------| :------| :------|
 | 1 | Remote | ~/.claude/remote-settings.json，由服务端同步 |
 | 2 | Admin-only MDM | Windows HKLM、macOS plist（仅管理员可写） |
 | 3 | File-based | /etc/claude-code/managed-settings.json + drop-in 目录 |
@@ -101,7 +101,7 @@ flowchart TB
 ### 4.2 Trust 前后的能力差异
 
 | 能力 | Trust 前 | Trust 后 |
-|------|---------|---------|
+| :------| :---------| :---------|
 | Bash 工具执行 | 阻断 | 允许 |
 | 所有 Hooks 运行 | 跳过 | 执行 |
 | 危险环境变量 | 阻断 | 注入 |
@@ -160,6 +160,7 @@ ANTHROPIC_LOG_LEVEL, CLAUDE_CODE_USE_BEDROCK, CLAUDE_CODE_USE_VERTEX, ...
 ### 6.4 ConfigChange Hooks
 
 配置变更会触发 ConfigChange 事件（27 种 Hook 事件之一），匹配器支持：
+
 - `source: user_settings` — 用户配置变更
 - `source: project_settings` — 项目配置变更
 - `source: local_settings` — 本地配置变更
@@ -181,7 +182,7 @@ Hook 可以返回 `watchPaths` 影响后续的文件监视范围。
 ## 8. 关键源码锚点
 
 | 文件 | 行号 | 职责 |
-|------|------|------|
+| :------| :------| :------|
 | src/utils/settings/constants.ts | 7-170 | 配置常量定义，SETTING_SOURCES 枚举 |
 | src/utils/settings/settings.ts | 645-868 | 配置加载与深合并逻辑 |
 | src/utils/settings/settings.ts | 319-407 | Policy 层级实现（first-source-wins） |
@@ -249,7 +250,7 @@ sequenceDiagram
 当 policySettings 包含以下标志时，行为会发生根本改变：
 
 | 策略标志 | 效果 |
-|---------|------|
+| :---------| :------|
 | `disableAllHooks` | 所有 hooks 被禁用（包括用户配置的） |
 | `allowManagedHooksOnly` | 只允许策略定义的 hooks 运行 |
 | `strictPluginOnlyCustomization` | 阻止 user/project/local hooks |

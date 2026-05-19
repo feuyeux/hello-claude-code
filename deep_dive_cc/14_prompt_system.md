@@ -276,7 +276,7 @@ export function DANGEROUS_uncachedSystemPromptSection(
 ### 主要动态段清单
 
 | 段名 | 内容 | 缓存策略 |
-|------|------|---------|
+| :------| :------| :---------|
 | session_guidance | Agent 工具指引、Explore/Plan 代理、Skill 调用规则、Verification 代理合同 | 缓存 |
 | memory | 记忆系统 prompt（MEMORY.md 内容） | 缓存 |
 | ant_model_override | ant 内部模型行为覆盖 | 缓存 |
@@ -356,7 +356,7 @@ Agent 系统有两条 prompt 路径：内置 Agent 和用户自定义 Agent。
 在 `src/tools/AgentTool/built-in/` 下定义了若干内置 Agent：
 
 | Agent | 类型 | 特点 |
-|-------|------|------|
+| :-------| :------| :------|
 | Explore | 只读搜索 | 禁止 Agent/Edit/Write 工具，强调并行搜索效率，omitClaudeMd 加速启动 |
 | Plan | 只读 + 结构化计划 | 输出 JSON 格式的任务计划 |
 | Verification | 对抗性测试 | 独立验证实现是否正确，分配 PASS/FAIL/PARTIAL 评定 |
@@ -476,7 +476,7 @@ Hooks 系统的 prompt 处理 `<user-prompt-submit-hook>` 等标签中的反馈�
 ## 关键源码锚点
 
 | 文件 | 职责 |
-|------|------|
+| :------| :------|
 | `src/constants/prompts.ts:444-577` | 主 prompt 构建，静态段 + 动态段组装 |
 | `src/constants/prompts.ts:114` | SYSTEM_PROMPT_DYNAMIC_BOUNDARY 定义 |
 | `src/constants/systemPromptSections.ts` | 动态段注册/缓存/解析框架 |
