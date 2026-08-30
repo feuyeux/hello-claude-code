@@ -10,7 +10,10 @@ import {
   logEvent,
 } from 'src/services/analytics/index.js'
 import { getModelStrings } from 'src/utils/model/modelStrings.js'
-import { getAPIProvider } from 'src/utils/model/providers.js'
+import {
+  getAPIProvider,
+  isFirstPartyAnthropicBaseUrl,
+} from 'src/utils/model/providers.js'
 import {
   getIsNonInteractiveSession,
   preferThirdPartyAuthentication,
@@ -293,6 +296,14 @@ export function getAnthropicApiKeyWithSource(
     return {
       key: null,
       source: 'none',
+    }
+  }
+  // For Anthropic-compatible gateways (for example Bailian), trust an
+  // explicitly provided env key without requiring the local approval list.
+  if (apiKeyEnv && !isFirstPartyAnthropicBaseUrl()) {
+    return {
+      key: apiKeyEnv,
+      source: 'ANTHROPIC_API_KEY',
     }
   }
   // Check for ANTHROPIC_API_KEY before checking the apiKeyHelper or /login-managed key

@@ -41,6 +41,7 @@
 19. [19-transport-system.md](./19-transport-system.md)：看 WebSocket、SSE、HybridTransport 与批量上传器。
 20. [20-bridge-system.md](./20-bridge-system.md)：看远程桥接、JWT 刷新、会话同步与远程控制链路。
 21. [21-agents-tasks-remote.md](./21-agents-tasks-remote.md)：最后看多代理、后台任务与远程会话协作。
+22. [22-bailian-compatible-api.md](./22-bailian-compatible-api.md)：看阿里云百炼 Anthropic 兼容接口如何接入这个仓库，以及兼容网关场景下需要绕开的启动与认证逻辑。
 
 ## 2. 各篇一句话索引
 
@@ -67,6 +68,7 @@
 | [19-transport-system.md](./19-transport-system.md) | WebSocket、SSE、HybridTransport 与事件上传器如何构成通信层 | 想研究网络层时 |
 | [20-bridge-system.md](./20-bridge-system.md) | 远程桥接、JWT 刷新、历史同步与桥接状态如何工作 | 想研究远程控制与桥接链路时 |
 | [21-agents-tasks-remote.md](./21-agents-tasks-remote.md) | 子代理、后台任务和远程会话如何协作 | 想研究多代理与任务系统时 |
+| [22-bailian-compatible-api.md](./22-bailian-compatible-api.md) | 如何把仓库切到阿里云百炼兼容接口，以及为什么原始版本会在 preflight 与认证处卡住 | 想在国内实际跑通这个仓库时 |
 
 ## 3. 按目标选读
 
